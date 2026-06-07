@@ -58,6 +58,8 @@ def main():
     require("adapters/openclaw/README.md")
     require("adapters/hermes/README.md")
     require("README.en.md")
+    require("docs/release.md")
+    require(".github/release.yml")
     require(".github/workflows/windows-release.yml")
     require("scripts/build_windows.ps1")
     require("packaging/windows/installer.iss")
@@ -66,27 +68,61 @@ def main():
         "README.md",
         [
             "功能一览",
-            "先让 AI 帮你安装",
-            "Codex：安装 Plugin",
-            "Claude Code：安装 Plugin",
-            "OpenClaw / Hermes：安装 MCP",
+            "安装方式",
+            "方式一：让 AI 辅助安装",
+            "方式二：开发者手动安装",
+            "手动安装：Codex Plugin",
+            "手动安装：Claude Code Plugin",
+            "手动安装：OpenClaw / Hermes MCP",
             "给 OpenClaw / Hermes 添加自动调用策略",
             "https://github.com/NeoZhouCHN/github-stars-radar.git",
             "https://github.com/settings/personal-access-tokens/new",
-            "Windows 打包",
             "MIT License",
         ],
     )
     require_text(
         "README.en.md",
         [
-            "Let AI Install It First",
+            "Installation Options",
+            "Option 1: AI-Assisted Installation",
+            "Option 2: Manual Installation",
             "Codex",
             "Claude Code",
             "OpenClaw / Hermes",
             "Local Privacy Boundary",
-            "Windows Packaging",
             "MIT License",
+        ],
+    )
+    require_text(
+        "docs/release.md",
+        [
+            "Windows Packaging",
+            "publish_release",
+            "automatically generated release notes",
+            "GitHub **Release**",
+            "GitHub **Packages**",
+            ".github/release.yml",
+            "Multi-Platform Distribution",
+        ],
+    )
+    require_text(
+        ".github/workflows/windows-release.yml",
+        [
+            "workflow_dispatch",
+            "publish_release",
+            "--generate-notes",
+            "--clobber",
+            "actions/upload-artifact@v4",
+        ],
+    )
+    require_text(
+        ".github/release.yml",
+        [
+            "Features",
+            "Fixes",
+            "Documentation",
+            "Packaging And CI",
+            "Other Changes",
         ],
     )
     print("Manifest and release-safety checks passed")

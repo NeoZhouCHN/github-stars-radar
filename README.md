@@ -17,17 +17,19 @@
   <a href="README.en.md"><img src="https://img.shields.io/badge/README-EN-111827?style=for-the-badge" alt="English" /></a>
 </p>
 
-> 视频文件不直接放在 README 首页里。GitHub 对 README 内嵌 MP4 支持不稳定，大文件也会拖慢主页。推荐把演示视频放到 Releases、B 站、YouTube、抖音或项目官网，再在这里放轻量链接。
-
 ## 中文
 
 **GitHub Stars Radar** 可以把你 GitHub 里点过 Star 的仓库，变成 Codex、Claude Code、OpenClaw、Hermes 等 AI 编程工具能查询的“本地资料库”。
 
 简单说：你以前收藏过很多好项目，但写代码时经常想不起来。这个项目会把 Stars 同步到本地，让 AI 能搜索、推荐、读取 README、保存分析结果。下次做选型、找参考实现、推荐工具时，AI 可以先查你收藏过的项目，而不是每次从零开始。
 
-## 先让 AI 帮你安装
+## 安装方式
 
-如果你正在 Codex 或 Claude Code 里看这个仓库，推荐先把下面这段 prompt 发给 AI。它会按客户端类型选择安装方式：
+下面两种方式选一种即可，不需要先让 AI 安装再手动安装。
+
+### 方式一：让 AI 辅助安装
+
+适合已经在 Codex、Claude Code、OpenClaw 或 Hermes 里工作的开发者。把下面这段 prompt 发给当前 AI，它会按客户端类型选择安装方式：
 
 - **Codex**：优先安装 Codex plugin。
 - **Claude Code**：优先安装 Claude Code plugin。
@@ -51,6 +53,16 @@
 
 不要提交 data/*.sqlite、data/*.json、.env 或任何 token。
 ```
+
+### 方式二：开发者手动安装
+
+适合想自己控制配置文件、MCP 路径和环境变量的开发者。手动安装需要完成三件事：
+
+1. 下载本项目并创建 `.env`。
+2. 配置 GitHub token 或已经登录的 `gh` CLI。
+3. 按目标客户端接入 plugin 或 MCP server。
+
+后续章节分别给出 Codex、Claude Code、OpenClaw 和 Hermes 的手动配置方式。
 
 ## 功能一览
 
@@ -94,7 +106,7 @@
 
 只同步公开 star 时，GitHub Token 通常不需要额外权限。若要读取 private starred repositories，token 需要能读取这些 private repositories。创建后只复制一次，像密码一样保存，不要发给 AI，也不要提交到 GitHub。
 
-## 下载和初始化
+## 手动安装：下载和初始化
 
 把 `<your-project-path>` 换成你自己电脑上的项目目录。
 
@@ -155,7 +167,7 @@ python3 scripts/smoke_mcp.py
 python3 scripts/check_manifests.py
 ```
 
-## Codex：安装 Plugin
+## 手动安装：Codex Plugin
 
 Codex 推荐优先用 plugin 方式安装。本仓库提供：
 
@@ -176,7 +188,7 @@ Codex 推荐优先用 plugin 方式安装。本仓库提供：
 先用 GitHub Stars Radar 搜一下我收藏过的 MCP / agent 项目，推荐 5 个最适合当前任务的仓库，并说明适用原因、不适用原因和下一步验证方式。
 ```
 
-## Claude Code：安装 Plugin
+## 手动安装：Claude Code Plugin
 
 Claude Code 推荐优先用 plugin 方式安装。本仓库根目录提供：
 
@@ -198,7 +210,7 @@ Claude Code 推荐优先用 plugin 方式安装。本仓库根目录提供：
 调用 github-stars-radar。先运行 sync_stars，再列出未分析的 starred repositories。选择 5 个仓库，读取 README，并用 summary/tags/category/platforms/notes 保存分析结果。
 ```
 
-## OpenClaw / Hermes：安装 MCP
+## 手动安装：OpenClaw / Hermes MCP
 
 OpenClaw 和 Hermes 使用保守的通用 MCP 接入方式。如果客户端支持 stdio MCP server，配置：
 
@@ -283,20 +295,6 @@ Windows 可以把 `command` 改成 `py`。
 - `.env.*`
 
 这些文件可能包含你的个人 stars、agent 分析结果或 token，不应该提交到公开仓库。
-
-## Windows 打包
-
-仓库包含一个手动触发的 GitHub Actions workflow：`.github/workflows/windows-release.yml`。
-
-每次更新项目后，你可以在 GitHub 页面进入 **Actions -> Build Windows Package -> Run workflow**，它会在 Windows runner 上：
-
-1. 跑单元测试、MCP smoke test、manifest 校验。
-2. 用 PyInstaller 打包 `github-stars-radar.exe`。
-3. 生成 portable zip。
-4. 如果 Inno Setup 可用，生成 `GitHubStarsRadarSetup-<version>.exe` 安装包。
-5. 把 zip、安装包和 SHA256 校验文件上传为 workflow artifacts。
-
-如果你要正式发布版本，可以下载 artifacts 后手动上传到 GitHub Releases；后续也可以再加自动创建 Release 的步骤。
 
 ## Repo 分析 Prompts
 

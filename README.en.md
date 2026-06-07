@@ -23,9 +23,13 @@
 
 In plain terms: you have starred many useful repositories, but your coding agent does not know them by default. This project syncs those stars locally, lets agents search them, fetch README content, recommend useful repositories for a task, and save structured analysis so future agents do not repeat the same work.
 
-## Let AI Install It First
+## Installation Options
 
-Paste this prompt into Codex or Claude Code:
+Choose one installation route. You do not need to ask AI to install the project and then install it manually again.
+
+### Option 1: AI-Assisted Installation
+
+Use this when you are already working inside Codex, Claude Code, OpenClaw, or Hermes. Paste this prompt into the current AI client:
 
 ```text
 Please install and connect GitHub Stars Radar.
@@ -46,6 +50,16 @@ Please:
 Do not commit data/*.sqlite, data/*.json, .env, or any token.
 ```
 
+### Option 2: Manual Installation
+
+Use this when you want direct control over config files, MCP paths, and environment variables. Manual installation has three parts:
+
+1. Clone this project and create `.env`.
+2. Configure a GitHub token, or use an authenticated `gh` CLI.
+3. Connect the plugin or MCP server for your target client.
+
+The following sections show the manual install routes for Codex, Claude Code, OpenClaw, and Hermes.
+
 ## Features
 
 | Feature | Meaning |
@@ -64,7 +78,7 @@ The MCP server provides the actual tools: `sync_stars`, `search_stars`, `recomme
 
 Plugins are installation and guidance bundles. Codex and Claude Code can use plugin metadata and skills/instructions. OpenClaw and Hermes should use the generic stdio MCP configuration unless they have a verified plugin format for your environment.
 
-## Setup
+## Manual Setup
 
 Requirements:
 
@@ -159,12 +173,6 @@ OpenClaw / Hermes:
 ```
 
 On Windows, use `py` if that is your working Python launcher.
-
-## Windows Packaging
-
-This repository includes `.github/workflows/windows-release.yml`.
-
-After updating the project, open **Actions -> Build Windows Package -> Run workflow**. The workflow runs tests, builds a PyInstaller executable, creates a portable zip, optionally builds an Inno Setup installer, and uploads the outputs as workflow artifacts.
 
 ## Local Privacy Boundary
 
