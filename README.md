@@ -302,25 +302,6 @@ Windows 可以把 `command` 改成 `py`。
 - `max_cache_age_minutes=360`
 - `allow_stale=true`
 
-## 本地隐私边界
-
-默认缓存路径是 `./data/stars.sqlite`。`.gitignore` 已排除：
-
-- `data/*.json`
-- `data/*.sqlite`
-- `data/*.db`
-- `.env`
-- `.env.*`
-
-这些文件可能包含你的个人 stars、agent 分析结果或 token，不应该提交到公开仓库。
-
-## Repo 分析 Prompts
-
-- `prompts/repo-analysis.zh.md`
-- `prompts/repo-analysis.en.md`
-
-两个 prompt 都要求结构化输出：`summary`、`tags`、`category`、`platforms`、`notes`。
-
 ## License
 
 MIT License. See `LICENSE`.

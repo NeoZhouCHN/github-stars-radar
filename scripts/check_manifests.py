@@ -93,7 +93,6 @@ def main():
             "OpenClaw / Hermes",
             "Windows Installer Users",
             "GitHubStarsRadarConfig.exe",
-            "Local Privacy Boundary",
             "MIT License",
         ],
     )

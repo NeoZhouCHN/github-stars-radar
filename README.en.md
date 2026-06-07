@@ -192,18 +192,6 @@ OpenClaw / Hermes:
 
 On Windows, use `py` if that is your working Python launcher.
 
-## Local Privacy Boundary
-
-The default cache path is `./data/stars.sqlite`. `.gitignore` excludes:
-
-- `data/*.json`
-- `data/*.sqlite`
-- `data/*.db`
-- `.env`
-- `.env.*`
-
-These files may contain personal stars, saved agent analysis, or tokens. Do not commit them.
-
 ## License
 
 MIT License. See `LICENSE`.
