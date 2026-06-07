@@ -57,6 +57,11 @@ def main():
     require("adapters/claude-code/README.md")
     require("adapters/openclaw/README.md")
     require("adapters/hermes/README.md")
+    require("README.en.md")
+    require(".github/workflows/windows-release.yml")
+    require("scripts/build_windows.ps1")
+    require("packaging/windows/installer.iss")
+
     require_text(
         "README.md",
         [
@@ -68,13 +73,20 @@ def main():
             "给 OpenClaw / Hermes 添加自动调用策略",
             "https://github.com/NeoZhouCHN/github-stars-radar.git",
             "https://github.com/settings/personal-access-tokens/new",
+            "Windows 打包",
             "MIT License",
-            "Local Privacy Boundary",
+        ],
+    )
+    require_text(
+        "README.en.md",
+        [
             "Let AI Install It First",
-            "Codex: Install Plugin",
-            "Claude Code: Install Plugin",
-            "OpenClaw / Hermes: Install MCP",
-            "Add Auto-Call Instructions For OpenClaw / Hermes",
+            "Codex",
+            "Claude Code",
+            "OpenClaw / Hermes",
+            "Local Privacy Boundary",
+            "Windows Packaging",
+            "MIT License",
         ],
     )
     print("Manifest and release-safety checks passed")
