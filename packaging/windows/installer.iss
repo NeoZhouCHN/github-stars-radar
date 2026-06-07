@@ -36,7 +36,8 @@ Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs 
 
 [Icons]
 Name: "{group}\GitHub Stars Radar README"; Filename: "{app}\README.md"
+Name: "{group}\GitHub Stars Radar Config"; Filename: "{app}\GitHubStarsRadarConfig.exe"
 Name: "{group}\Uninstall GitHub Stars Radar"; Filename: "{uninstallexe}"
 
 [Run]
-Filename: "{app}\README.md"; Description: "Open README"; Flags: postinstall shellexec skipifsilent
+Filename: "{app}\GitHubStarsRadarConfig.exe"; Description: "Open configuration helper"; Flags: postinstall nowait skipifsilent

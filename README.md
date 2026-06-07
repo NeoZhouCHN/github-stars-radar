@@ -106,6 +106,24 @@
 
 只同步公开 star 时，GitHub Token 通常不需要额外权限。若要读取 private starred repositories，token 需要能读取这些 private repositories。创建后只复制一次，像密码一样保存，不要发给 AI，也不要提交到 GitHub。
 
+## Windows 安装包用户
+
+如果从 Releases 下载 `GitHubStarsRadarSetup-<version>.exe`，安装完成后会包含：
+
+- `github-stars-radar.exe`：MCP server 主程序
+- `GitHubStarsRadarConfig.exe`：本地配置助手
+
+推荐流程：
+
+1. 运行安装包。
+2. 打开 **GitHub Stars Radar Config**。
+3. 输入 GitHub token，生成本地 `.env`。
+4. 生成 `generated/github-stars-radar.mcp.json`。
+5. 把生成的 MCP 配置添加到 Codex、Claude Code、OpenClaw 或 Hermes。
+6. 在 AI 客户端里运行 `sync_stars` 或 `search_stars` 测试。
+
+安装包只负责安装工具和生成配置文件，不会自动修改所有 AI 客户端的配置。不同客户端的 MCP 配置位置和格式可能不同，保守做法是生成可复制的配置片段。
+
 ## 手动安装：下载和初始化
 
 把 `<your-project-path>` 换成你自己电脑上的项目目录。

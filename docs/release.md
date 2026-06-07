@@ -26,15 +26,16 @@ The workflow:
 
 1. Runs unit tests, MCP smoke test, and manifest checks.
 2. Builds `github-stars-radar.exe` with PyInstaller.
-3. Creates a portable zip.
-4. Builds `GitHubStarsRadarSetup-<version>.exe` with Inno Setup.
-5. Creates `SHA256SUMS.txt`.
-6. Uploads zip, installer, and checksums as workflow artifacts.
+3. Builds `GitHubStarsRadarConfig.exe` for Windows packages.
+4. Creates Windows, macOS, and Linux portable packages.
+5. Builds `GitHubStarsRadarSetup-<version>.exe` with Inno Setup on Windows.
+6. Creates `SHA256SUMS.txt`.
+7. Uploads packages, installer, and checksums as workflow artifacts.
 
 ## Output Destinations
 
 - By default, outputs are uploaded only to the workflow run's **Artifacts** section.
-- If `publish_release` is set to `true`, the workflow creates a GitHub **Release** with automatically generated release notes and uploads the zip, installer, and checksums as Release assets.
+- If `publish_release` is set to `true`, the workflow creates a GitHub **Release** with automatically generated release notes and uploads packages, installer, and checksums as Release assets.
 - If the release tag already exists, the workflow does not rewrite the release notes. It only re-uploads assets with `--clobber`.
 - This project does not use GitHub **Packages**. Windows installers, zips, and exes are release downloads, so Releases fit better than Packages.
 
@@ -74,10 +75,19 @@ py scripts\check_manifests.py
 6. For public releases, set `publish_release=true`.
 7. After the workflow completes, open **Releases** and confirm the installer, zip, checksums, and generated notes are present.
 
-## Multi-Platform Distribution
+## Current Package Outputs
 
-- Low effort: add `ubuntu-latest` and `macos-latest` to the GitHub Actions matrix and produce Linux/macOS portable zips with PyInstaller.
+The workflow currently produces:
+
+- `GitHubStarsRadar-<version>-windows-x64.zip`
+- `GitHubStarsRadarSetup-<version>.exe`
+- `GitHubStarsRadar-<version>-macos-x64.tar.gz`
+- `GitHubStarsRadar-<version>-linux-x64.tar.gz`
+- per-platform SHA256 checksum files
+
+## Future Distribution Work
+
 - Medium effort: add native macOS `.dmg`/`.pkg` and Linux `.deb`/`.rpm`/AppImage packages.
 - High effort: add code signing, notarization, auto-update, and package manager publishing such as Homebrew, winget, Scoop, Chocolatey, or apt/yum repositories.
 
-The current repository starts with Windows packaging. Adding multi-platform portable zips is not difficult; matching mature projects with fully signed installers across platforms requires additional release infrastructure.
+The current workflow provides portable packages for common desktop platforms and a Windows installer. Matching mature projects with fully signed installers across platforms requires additional release infrastructure.

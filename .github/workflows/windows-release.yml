@@ -1,4 +1,4 @@
-name: Build Windows Package
+name: Build Release Packages
 
 on:
   workflow_dispatch:
@@ -17,12 +17,26 @@ on:
           - "true"
 
 jobs:
-  build-windows:
-    runs-on: windows-2025
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
     permissions:
-      contents: write
+      contents: read
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows
+            runner: windows-2025
+            artifact: github-stars-radar-windows-${{ inputs.version }}
+          - platform: macos
+            runner: macos-14
+            artifact: github-stars-radar-macos-${{ inputs.version }}
+          - platform: linux
+            runner: ubuntu-24.04
+            artifact: github-stars-radar-linux-${{ inputs.version }}
 
     steps:
       - name: Checkout
@@ -36,43 +50,74 @@ jobs:
       - name: Run tests
         shell: pwsh
         run: |
-          py -m unittest discover -s tests -v
-          py scripts\smoke_mcp.py
-          py scripts\check_manifests.py
+          python -m unittest discover -s tests -v
+          python scripts/smoke_mcp.py
+          python scripts/check_manifests.py
 
       - name: Install Inno Setup
+        if: ${{ matrix.platform == 'windows' }}
         shell: pwsh
         run: choco install innosetup --no-progress -y
 
       - name: Build Windows package
+        if: ${{ matrix.platform == 'windows' }}
         shell: pwsh
         run: .\scripts\build_windows.ps1 -Version "${{ inputs.version }}"
 
+      - name: Build portable package
+        if: ${{ matrix.platform != 'windows' }}
+        shell: bash
+        run: python scripts/build_portable.py --version "${{ inputs.version }}" --platform "${{ matrix.platform }}"
+
       - name: Upload Windows artifacts
+        if: ${{ matrix.platform == 'windows' }}
         uses: actions/upload-artifact@v4
         with:
-          name: github-stars-radar-windows-${{ inputs.version }}
+          name: ${{ matrix.artifact }}
           path: |
             dist/GitHubStarsRadar-${{ inputs.version }}-windows-x64.zip
             dist/GitHubStarsRadarSetup-${{ inputs.version }}.exe
             dist/SHA256SUMS.txt
 
+      - name: Upload portable artifacts
+        if: ${{ matrix.platform != 'windows' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            dist/GitHubStarsRadar-${{ inputs.version }}-${{ matrix.platform }}-x64.tar.gz
+            dist/SHA256SUMS-${{ matrix.platform }}.txt
+
+  publish-release:
+    name: Publish GitHub Release
+    if: ${{ inputs.publish_release == 'true' }}
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Checkout release config
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
       - name: Publish GitHub Release
-        if: ${{ inputs.publish_release == 'true' }}
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
-          $tag = "v${{ inputs.version }}"
-          gh release view $tag *> $null
-          if ($LASTEXITCODE -ne 0) {
-            gh release create $tag `
-              --target "${{ github.sha }}" `
-              --title "GitHub Stars Radar $tag" `
+          set -euo pipefail
+          tag="v${{ inputs.version }}"
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" \
+              --target "${{ github.sha }}" \
+              --title "GitHub Stars Radar $tag" \
               --generate-notes
-          }
-          gh release upload $tag `
-            "dist/GitHubStarsRadar-${{ inputs.version }}-windows-x64.zip" `
-            "dist/GitHubStarsRadarSetup-${{ inputs.version }}.exe" `
-            "dist/SHA256SUMS.txt" `
-            --clobber
+          fi
+          mapfile -d '' assets < <(find release-assets -type f -print0)
+          gh release upload "$tag" "${assets[@]}" --clobber

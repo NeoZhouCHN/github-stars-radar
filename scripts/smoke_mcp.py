@@ -31,7 +31,7 @@ def main():
         env = os.environ.copy()
         env["GITHUB_STARS_RADAR_DB"] = os.path.join(tmp, "stars.sqlite")
         proc = subprocess.Popen(
-            ["py", os.path.join(ROOT, "mcp-server", "server.py")],
+            [sys.executable, os.path.join(ROOT, "mcp-server", "server.py")],
             cwd=ROOT,
             env=env,
             stdin=subprocess.PIPE,

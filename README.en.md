@@ -92,6 +92,24 @@ Get a GitHub token:
 - Fine-grained token page: [https://github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new)
 - Classic token page: [https://github.com/settings/tokens/new](https://github.com/settings/tokens/new)
 
+## Windows Installer Users
+
+If you download `GitHubStarsRadarSetup-<version>.exe` from Releases, the installed app includes:
+
+- `github-stars-radar.exe`: the MCP server
+- `GitHubStarsRadarConfig.exe`: a local configuration helper
+
+Recommended flow:
+
+1. Run the installer.
+2. Open **GitHub Stars Radar Config**.
+3. Paste a GitHub token to generate local `.env`.
+4. Generate `generated/github-stars-radar.mcp.json`.
+5. Add the generated MCP config to Codex, Claude Code, OpenClaw, or Hermes.
+6. In the AI client, run `sync_stars` or `search_stars` to test it.
+
+The installer installs the tool and generates config files. It does not silently modify every AI client configuration because client schemas and config locations vary.
+
 Clone and initialize:
 
 ```bash

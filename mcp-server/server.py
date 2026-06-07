@@ -8,9 +8,13 @@ if ROOT not in sys.path:
 
 from core.github_stars_radar.mcp import handle_request
 from core.github_stars_radar.service import StarsRadarService
+from core.github_stars_radar.env import load_env_file
 
 
 def main():
+    load_env_file(os.path.join(ROOT, ".env"))
+    if getattr(sys, "frozen", False):
+        load_env_file(os.path.join(os.path.dirname(sys.executable), ".env"))
     db_path = os.environ.get("GITHUB_STARS_RADAR_DB") or os.environ.get("GITHUB_STARS_RADAR_CACHE") or "./data/stars.sqlite"
     service = StarsRadarService(db_path)
     try:

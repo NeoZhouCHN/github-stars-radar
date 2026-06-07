@@ -77,6 +77,8 @@ def main():
             "给 OpenClaw / Hermes 添加自动调用策略",
             "https://github.com/NeoZhouCHN/github-stars-radar.git",
             "https://github.com/settings/personal-access-tokens/new",
+            "Windows 安装包用户",
+            "GitHubStarsRadarConfig.exe",
             "MIT License",
         ],
     )
@@ -89,6 +91,8 @@ def main():
             "Codex",
             "Claude Code",
             "OpenClaw / Hermes",
+            "Windows Installer Users",
+            "GitHubStarsRadarConfig.exe",
             "Local Privacy Boundary",
             "MIT License",
         ],
@@ -102,7 +106,8 @@ def main():
             "GitHub **Release**",
             "GitHub **Packages**",
             ".github/release.yml",
-            "Multi-Platform Distribution",
+            "Current Package Outputs",
+            "GitHubStarsRadarConfig.exe",
         ],
     )
     require_text(

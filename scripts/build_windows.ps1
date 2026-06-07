@@ -8,7 +8,7 @@ $Root = Resolve-Path (Join-Path $PSScriptRoot "..")
 Set-Location $Root
 
 $PackageRoot = Join-Path $Root "dist\windows-package"
-$PortableRoot = Join-Path $PackageRoot "GitHubStarsRadar"
+$PortableRoot = Join-Path $Root "dist\portable\GitHubStarsRadar-$Version-windows-x64"
 $ZipPath = Join-Path $Root "dist\GitHubStarsRadar-$Version-windows-x64.zip"
 $InstallerPath = Join-Path $Root "dist\GitHubStarsRadarSetup-$Version.exe"
 $ChecksumsPath = Join-Path $Root "dist\SHA256SUMS.txt"
@@ -21,22 +21,7 @@ Remove-Item -Recurse -Force -ErrorAction SilentlyContinue `
   $InstallerPath, `
   $ChecksumsPath
 
-py -m pip install --upgrade pip
-py -m pip install pyinstaller
-
-py -m PyInstaller `
-  --noconfirm `
-  --clean `
-  --onedir `
-  --name github-stars-radar `
-  "mcp-server\server.py"
-
-New-Item -ItemType Directory -Force -Path $PortableRoot | Out-Null
-Copy-Item -Recurse -Force "dist\github-stars-radar\*" $PortableRoot
-Copy-Item -Force ".env.example", "LICENSE", "README.md", "README.en.md" $PortableRoot
-Copy-Item -Recurse -Force "prompts", "skills", "adapters" $PortableRoot
-
-Compress-Archive -Path (Join-Path $PortableRoot "*") -DestinationPath $ZipPath -Force
+py scripts\build_portable.py --version $Version --platform windows
 
 $Iscc = Get-Command "ISCC.exe" -ErrorAction SilentlyContinue
 if ($Iscc) {
