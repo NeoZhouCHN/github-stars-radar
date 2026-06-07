@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "name": "github-stars-radar",
+  "version": "0.1.0",
+  "description": "Local-first GitHub stars memory MCP server and skill bundle for Codex.",
+  "license": "MIT",
+  "publisher": "local",
+  "mcp_servers": {
+    "github-stars-radar": {
+      "command": "py",
+      "args": [
+        "mcp-server/server.py"
+      ],
+      "env": {
+        "GITHUB_STARS_RADAR_DB": "./data/stars.sqlite"
+      }
+    }
+  },
+  "skills": [
+    "skills/github-stars-radar"
+  ]
+}

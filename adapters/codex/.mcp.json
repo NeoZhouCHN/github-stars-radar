@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "github-stars-radar": {
+      "command": "py",
+      "args": [
+        "mcp-server/server.py"
+      ],
+      "env": {
+        "GITHUB_STARS_RADAR_DB": "./data/stars.sqlite"
+      }
+    }
+  }
+}

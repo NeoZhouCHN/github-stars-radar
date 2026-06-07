@@ -1,0 +1,14 @@
+{
+  "name": "github-stars-radar",
+  "displayName": "GitHub Stars Radar",
+  "version": "0.1.0",
+  "description": "Local-first GitHub stars memory MCP server and skill bundle for Claude Code.",
+  "license": "MIT",
+  "repository": "https://github.com/NeoZhouCHN/github-stars-radar",
+  "keywords": [
+    "github",
+    "stars",
+    "mcp",
+    "agent-memory"
+  ]
+}

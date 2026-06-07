@@ -1,0 +1,12 @@
+data/*.json
+data/*.sqlite
+data/*.db
+.env
+.env.*
+!.env.example
+!data/.gitkeep
+node_modules/
+dist/
+coverage/
+__pycache__/
+*.pyc
