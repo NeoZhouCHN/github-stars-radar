@@ -102,6 +102,8 @@ jobs:
     steps:
       - name: Checkout release config
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -113,11 +115,17 @@ jobs:
         run: |
           set -euo pipefail
           tag="v${{ inputs.version }}"
+          python scripts/generate_release_notes.py --version "${{ inputs.version }}" --output release-notes.md
           if ! gh release view "$tag" >/dev/null 2>&1; then
             gh release create "$tag" \
               --target "${{ github.sha }}" \
               --title "GitHub Stars Radar $tag" \
-              --generate-notes
+              --notes-file release-notes.md
+          else
+            gh release edit "$tag" \
+              --target "${{ github.sha }}" \
+              --title "GitHub Stars Radar $tag" \
+              --notes-file release-notes.md
           fi
           mapfile -d '' assets < <(find release-assets -type f -print0)
           gh release upload "$tag" "${assets[@]}" --clobber

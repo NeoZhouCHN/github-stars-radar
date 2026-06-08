@@ -62,6 +62,7 @@ def main():
     require(".github/release.yml")
     require(".github/workflows/windows-release.yml")
     require("scripts/build_windows.ps1")
+    require("scripts/generate_release_notes.py")
     require("packaging/windows/installer.iss")
 
     require_text(
@@ -101,7 +102,7 @@ def main():
         [
             "Windows Packaging",
             "publish_release",
-            "automatically generated release notes",
+            "generated release notes",
             "GitHub **Release**",
             "GitHub **Packages**",
             ".github/release.yml",
@@ -114,7 +115,8 @@ def main():
         [
             "workflow_dispatch",
             "publish_release",
-            "--generate-notes",
+            "generate_release_notes.py",
+            "--notes-file",
             "--clobber",
             "actions/upload-artifact@v4",
         ],
