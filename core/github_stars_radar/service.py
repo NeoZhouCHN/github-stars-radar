@@ -1,5 +1,6 @@
 import hashlib
 import json
+import math
 import os
 import re
 from datetime import datetime, timezone
@@ -45,6 +46,7 @@ class StarsRadarService:
             except Exception:
                 readme = ""
             normalized["readme_hash"] = _hash_text(readme)
+            normalized["readme_text"] = readme
             existing = local_by_name.get(normalized["full_name"])
             if existing is None:
                 added += 1
@@ -138,12 +140,12 @@ class StarsRadarService:
         terms = _terms(task)
         scored = []
         for repo in self.store.list_repos():
-            text = self._repo_text(repo)
-            score = sum(text.count(term) for term in terms)
-            if score:
+            score, breakdown = self._score_repo(repo, terms)
+            if self._has_query_match(breakdown):
                 item = dict(repo)
                 item["score"] = score
-                item["fit_reason"] = f"Matches task terms: {', '.join([term for term in terms if term in text][:5])}"
+                item["score_breakdown"] = breakdown
+                item["fit_reason"] = self._fit_reason(breakdown)
                 item["not_fit_reason"] = "Validate current README and license before adopting."
                 item["next_validation"] = "Open README and run the referenced project locally if it becomes implementation-critical."
                 scored.append(item)
@@ -262,6 +264,81 @@ class StarsRadarService:
                 analysis["notes"],
             ]
         ).lower()
+
+    def _score_repo(self, repo, terms):
+        text = self._repo_text(repo)
+        readme_text = self.store.get_readme_text(repo["full_name"]).lower()
+        topics = {topic.lower() for topic in repo["topics"]}
+        language = repo["language"].lower()
+        breakdown = {
+            "text_match": min(sum(text.count(term) for term in terms), 20),
+            "topic_match": sum(1 for term in terms if term in topics) * 3,
+            "language_match": 5 if language and language in terms else 0,
+            "readme_match": min(sum(readme_text.count(term) for term in terms), 20),
+            "popularity": min(int(math.log10(max(repo["stars"], 0) + 1) * 3), 10),
+            "recency": self._recency_score(repo),
+            "analysis_quality": self._analysis_quality_score(repo),
+        }
+        weights = {
+            "text_match": 1,
+            "topic_match": 2,
+            "language_match": 1,
+            "readme_match": 2,
+            "popularity": 1,
+            "recency": 1,
+            "analysis_quality": 1,
+        }
+        score = sum(breakdown[key] * weights[key] for key in breakdown)
+        return score, breakdown
+
+    def _has_query_match(self, breakdown):
+        return any(
+            breakdown[key] > 0
+            for key in ("text_match", "topic_match", "language_match", "readme_match")
+        )
+
+    def _fit_reason(self, breakdown):
+        labels = {
+            "text_match": "metadata/analysis text",
+            "topic_match": "GitHub topics",
+            "language_match": "language",
+            "readme_match": "README",
+            "popularity": "stars",
+            "recency": "recent activity",
+            "analysis_quality": "saved analysis",
+        }
+        matched = [
+            labels[key]
+            for key, value in sorted(breakdown.items(), key=lambda item: (-item[1], item[0]))
+            if value > 0
+        ][:5]
+        return f"Strongest signals: {', '.join(matched)}"
+
+    def _recency_score(self, repo):
+        timestamp = repo["pushed_at"] or repo["updated_at"]
+        parsed = _parse_time(timestamp)
+        if not parsed:
+            return 0
+        days = (datetime.now(timezone.utc) - parsed).days
+        if days <= 30:
+            return 10
+        if days <= 180:
+            return 7
+        if days <= 365:
+            return 4
+        return 0
+
+    def _analysis_quality_score(self, repo):
+        if repo["analysis_stale"]:
+            return 0
+        analysis = repo["analysis"]
+        score = 0
+        score += 2 if analysis["summary"] else 0
+        score += min(len(analysis["tags"]), 3)
+        score += 2 if analysis["category"] else 0
+        score += min(len(analysis["platforms"]), 2)
+        score += 2 if analysis["notes"] else 0
+        return min(score, 10)
 
     def close(self):
         self.store.close()

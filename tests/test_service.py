@@ -166,6 +166,50 @@ class ServiceTest(unittest.TestCase):
         self.assertIn("alpha/agent-kit", context["prompt"])
         self.assertIn("Agent SDK examples", context["prompt"])
 
+    def test_recommendations_include_score_breakdown_from_repo_metadata_and_analysis(self):
+        self.github.star_pages = [
+            repo("alpha/minimal-agent", pushed_at="2020-01-01T00:00:00Z", description="agent tool"),
+            repo("beta/rich-agent", pushed_at="2999-01-01T00:00:00Z", description="agent tool"),
+        ]
+        self.github.star_pages[0]["stargazers_count"] = 10
+        self.github.star_pages[0]["topics"] = []
+        self.github.star_pages[1]["stargazers_count"] = 1000
+        self.github.star_pages[1]["topics"] = ["agent", "mcp"]
+        self.github.readmes = {
+            "alpha/minimal-agent": "basic helper",
+            "beta/rich-agent": "agent mcp memory helper",
+        }
+        self.service.sync_stars()
+        self.service.save_analysis(
+            "beta/rich-agent",
+            summary="Agent memory helper",
+            tags=["agent", "memory"],
+            category="agent-tools",
+            platforms=["codex"],
+            notes="Useful for MCP tool recommendations.",
+        )
+
+        recs = self.service.recommend_stars_for_task("agent mcp python memory", auto_sync=False)
+
+        top = recs["recommendations"][0]
+        self.assertEqual(top["full_name"], "beta/rich-agent")
+        self.assertGreater(top["score"], 0)
+        self.assertEqual(
+            sorted(top["score_breakdown"].keys()),
+            [
+                "analysis_quality",
+                "language_match",
+                "popularity",
+                "readme_match",
+                "recency",
+                "text_match",
+                "topic_match",
+            ],
+        )
+        self.assertGreater(top["score_breakdown"]["readme_match"], 0)
+        self.assertGreater(top["score_breakdown"]["topic_match"], 0)
+        self.assertGreater(top["score_breakdown"]["analysis_quality"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -36,6 +36,7 @@ class StarsStore:
                 pushed_at TEXT,
                 metadata_hash TEXT NOT NULL,
                 readme_hash TEXT NOT NULL DEFAULT '',
+                readme_text TEXT NOT NULL DEFAULT '',
                 prompt_version TEXT NOT NULL DEFAULT '',
                 analysis_summary TEXT,
                 analysis_tags_json TEXT NOT NULL DEFAULT '[]',
@@ -66,7 +67,13 @@ class StarsStore:
             );
             """
         )
+        self._ensure_column("repos", "readme_text", "TEXT NOT NULL DEFAULT ''")
         self.conn.commit()
+
+    def _ensure_column(self, table, column, definition):
+        columns = {row["name"] for row in self.conn.execute(f"PRAGMA table_info({table})").fetchall()}
+        if column not in columns:
+            self.conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
     def record_sync(self, status, added=0, removed=0, updated=0, message=""):
         started_at = utc_now()
@@ -101,10 +108,10 @@ class StarsStore:
             """
             INSERT INTO repos (
                 full_name, github_id, name, owner, description, html_url, language, topics_json,
-                stars, forks, updated_at, pushed_at, metadata_hash, readme_hash, prompt_version,
+                stars, forks, updated_at, pushed_at, metadata_hash, readme_hash, readme_text, prompt_version,
                 analysis_summary, analysis_tags_json, analysis_category, analysis_platforms_json,
                 analysis_notes, analysis_stale, removed, first_seen_at, last_seen_at, removed_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, NULL)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, NULL)
             ON CONFLICT(full_name) DO UPDATE SET
                 github_id=excluded.github_id,
                 name=excluded.name,
@@ -119,6 +126,7 @@ class StarsStore:
                 pushed_at=excluded.pushed_at,
                 metadata_hash=excluded.metadata_hash,
                 readme_hash=excluded.readme_hash,
+                readme_text=excluded.readme_text,
                 prompt_version=excluded.prompt_version,
                 analysis_stale=excluded.analysis_stale,
                 removed=0,
@@ -140,6 +148,7 @@ class StarsStore:
                 data.get("pushed_at"),
                 data["metadata_hash"],
                 data.get("readme_hash", ""),
+                data.get("readme_text", ""),
                 data.get("prompt_version", ""),
                 existing.get("analysis", {}).get("summary") if existing else None,
                 json.dumps(existing.get("analysis", {}).get("tags", []) if existing else [], ensure_ascii=False),
@@ -188,6 +197,10 @@ class StarsStore:
     def get_repo(self, full_name):
         row = self.conn.execute("SELECT * FROM repos WHERE full_name = ?", (full_name,)).fetchone()
         return self._row_to_repo(row) if row else None
+
+    def get_readme_text(self, full_name):
+        row = self.conn.execute("SELECT readme_text FROM repos WHERE full_name = ?", (full_name,)).fetchone()
+        return row["readme_text"] if row else ""
 
     def list_repos(self, include_removed=False):
         sql = "SELECT * FROM repos"
