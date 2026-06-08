@@ -76,6 +76,16 @@ class ServiceTest(unittest.TestCase):
         self.assertTrue(removed["removed"])
         self.assertTrue(changed["analysis_stale"])
 
+    def test_sync_reuses_readme_for_unchanged_existing_repositories(self):
+        self.github.star_pages = [repo("alpha/one")]
+        self.service.sync_stars()
+        first_readme_calls = self.github.readme_calls
+
+        second = self.service.sync_stars()
+
+        self.assertEqual(second["sync"]["updated"], 0)
+        self.assertEqual(self.github.readme_calls, first_readme_calls)
+
     def test_save_analysis_clears_stale_state_and_list_categories_uses_it(self):
         self.github.star_pages = [repo("alpha/one")]
         self.service.sync_stars()

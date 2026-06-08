@@ -21,9 +21,23 @@ REQUIRED_TOOLS = {
 
 
 def send(proc, payload):
-    proc.stdin.write(json.dumps(payload) + "\n")
+    body = json.dumps(payload).encode("utf-8")
+    proc.stdin.write(b"Content-Length: " + str(len(body)).encode("ascii") + b"\r\n\r\n" + body)
     proc.stdin.flush()
-    return json.loads(proc.stdout.readline())
+    header = b""
+    while b"\r\n\r\n" not in header:
+        chunk = proc.stdout.read(1)
+        if not chunk:
+            stderr = proc.stderr.read().decode("utf-8", errors="replace")
+            raise SystemExit(f"MCP server closed stdout before response. stderr: {stderr}")
+        header += chunk
+    length = None
+    for line in header.decode("ascii").split("\r\n"):
+        if line.lower().startswith("content-length:"):
+            length = int(line.split(":", 1)[1].strip())
+    if length is None:
+        raise SystemExit(f"MCP response missing Content-Length header: {header!r}")
+    return json.loads(proc.stdout.read(length).decode("utf-8"))
 
 
 def main():
@@ -37,7 +51,6 @@ def main():
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True,
         )
         try:
             init = send(proc, {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})

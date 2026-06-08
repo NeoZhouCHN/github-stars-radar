@@ -41,23 +41,27 @@ class StarsRadarService:
 
         for item in repos:
             normalized = self._normalize_repo(item)
-            try:
-                readme = self.github.get_readme(normalized["full_name"])
-            except Exception:
-                readme = ""
-            normalized["readme_hash"] = _hash_text(readme)
-            normalized["readme_text"] = readme
             existing = local_by_name.get(normalized["full_name"])
+            metadata_changed = existing is None or existing["metadata_hash"] != normalized["metadata_hash"] or existing["removed"]
+            if metadata_changed or not existing.get("readme_hash", ""):
+                try:
+                    readme = self.github.get_readme(normalized["full_name"])
+                except Exception:
+                    readme = ""
+                normalized["readme_hash"] = _hash_text(readme)
+                normalized["readme_text"] = readme
+            else:
+                normalized["readme_hash"] = existing["readme_hash"]
+                normalized["readme_text"] = self.store.get_readme_text(normalized["full_name"])
             if existing is None:
                 added += 1
                 self.store.add_change(run_id, normalized["full_name"], "added")
                 normalized["analysis_stale"] = True
             else:
                 changed = (
-                    existing["metadata_hash"] != normalized["metadata_hash"]
+                    metadata_changed
                     or existing["readme_hash"] != normalized["readme_hash"]
                     or existing["prompt_version"] not in ("", PROMPT_VERSION)
-                    or existing["removed"]
                 )
                 if changed:
                     updated += 1
@@ -65,11 +69,12 @@ class StarsRadarService:
                 normalized["analysis_stale"] = changed or existing["analysis_stale"]
             self.store.upsert_repo(normalized)
 
-        for full_name, existing in local_by_name.items():
-            if full_name not in remote_names and not existing["removed"]:
-                removed += 1
-                self.store.mark_removed(full_name)
-                self.store.add_change(run_id, full_name, "removed")
+        if include_removed:
+            for full_name, existing in local_by_name.items():
+                if full_name not in remote_names and not existing["removed"]:
+                    removed += 1
+                    self.store.mark_removed(full_name)
+                    self.store.add_change(run_id, full_name, "removed")
 
         message = f"sync: refreshed, added {added}, removed {removed}, updated {updated}"
         self.store.conn.execute(

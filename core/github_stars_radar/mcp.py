@@ -15,12 +15,106 @@ TOOL_NAMES = [
 ]
 
 
+TOOL_SCHEMAS = {
+    "sync_stars": {
+        "type": "object",
+        "properties": {"include_removed": {"type": "boolean", "default": True}},
+        "additionalProperties": False,
+    },
+    "list_star_changes": {
+        "type": "object",
+        "properties": {"limit": {"type": "integer", "default": 50, "minimum": 1}},
+        "additionalProperties": False,
+    },
+    "get_unanalyzed_stars": {
+        "type": "object",
+        "properties": {
+            "auto_sync": {"type": "boolean", "default": True},
+            "max_cache_age_minutes": {"type": "integer", "default": 360, "minimum": 0},
+            "allow_stale": {"type": "boolean", "default": True},
+            "limit": {"type": "integer", "default": 50, "minimum": 1},
+        },
+        "additionalProperties": False,
+    },
+    "list_categories": {
+        "type": "object",
+        "properties": {
+            "auto_sync": {"type": "boolean", "default": True},
+            "max_cache_age_minutes": {"type": "integer", "default": 360, "minimum": 0},
+            "allow_stale": {"type": "boolean", "default": True},
+            "limit": {"type": "integer", "default": 50, "minimum": 1},
+        },
+        "additionalProperties": False,
+    },
+    "get_star": {
+        "type": "object",
+        "properties": {"full_name": {"type": "string"}},
+        "required": ["full_name"],
+        "additionalProperties": False,
+    },
+    "get_readme": {
+        "type": "object",
+        "properties": {"full_name": {"type": "string"}},
+        "required": ["full_name"],
+        "additionalProperties": False,
+    },
+    "save_analysis": {
+        "type": "object",
+        "properties": {
+            "full_name": {"type": "string"},
+            "summary": {"type": "string"},
+            "tags": {"type": "array", "items": {"type": "string"}},
+            "category": {"type": "string"},
+            "platforms": {"type": "array", "items": {"type": "string"}},
+            "notes": {"type": "string"},
+        },
+        "required": ["full_name", "summary"],
+        "additionalProperties": False,
+    },
+    "search_stars": {
+        "type": "object",
+        "properties": {
+            "query": {"type": "string", "default": ""},
+            "category": {"type": "string"},
+            "tag": {"type": "string"},
+            "language": {"type": "string"},
+            "auto_sync": {"type": "boolean", "default": True},
+            "max_cache_age_minutes": {"type": "integer", "default": 360, "minimum": 0},
+            "allow_stale": {"type": "boolean", "default": True},
+            "limit": {"type": "integer", "default": 20, "minimum": 1},
+        },
+        "additionalProperties": False,
+    },
+    "recommend_stars_for_task": {
+        "type": "object",
+        "properties": {
+            "task": {"type": "string"},
+            "auto_sync": {"type": "boolean", "default": True},
+            "max_cache_age_minutes": {"type": "integer", "default": 360, "minimum": 0},
+            "allow_stale": {"type": "boolean", "default": True},
+            "limit": {"type": "integer", "default": 5, "minimum": 1},
+        },
+        "required": ["task"],
+        "additionalProperties": False,
+    },
+    "export_codex_context": {
+        "type": "object",
+        "properties": {
+            "full_names": {"type": "array", "items": {"type": "string"}},
+            "task": {"type": "string"},
+        },
+        "required": ["full_names", "task"],
+        "additionalProperties": False,
+    },
+}
+
+
 def build_tool_list():
     return [
         {
             "name": name,
             "description": _description(name),
-            "inputSchema": {"type": "object", "properties": {}, "additionalProperties": True},
+            "inputSchema": TOOL_SCHEMAS[name],
         }
         for name in TOOL_NAMES
     ]
@@ -30,6 +124,7 @@ def call_tool(service, name, arguments=None):
     arguments = arguments or {}
     if name not in TOOL_NAMES:
         raise ValueError(f"Unknown tool: {name}")
+    _validate_arguments(name, arguments)
     method = getattr(service, name)
     result = method(**arguments)
     return {
@@ -40,6 +135,17 @@ def call_tool(service, name, arguments=None):
             }
         ]
     }
+
+
+def _validate_arguments(name, arguments):
+    schema = TOOL_SCHEMAS[name]
+    allowed = set(schema.get("properties", {}))
+    unexpected = sorted(set(arguments) - allowed)
+    if unexpected:
+        raise ValueError(f"Unexpected arguments for {name}: {', '.join(unexpected)}")
+    missing = [key for key in schema.get("required", []) if key not in arguments]
+    if missing:
+        raise ValueError(f"Missing required arguments for {name}: {', '.join(missing)}")
 
 
 def handle_request(service, request):
