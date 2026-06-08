@@ -76,15 +76,52 @@ class ServiceTest(unittest.TestCase):
         self.assertTrue(removed["removed"])
         self.assertTrue(changed["analysis_stale"])
 
-    def test_sync_reuses_readme_for_unchanged_existing_repositories(self):
+    def test_sync_stars_defers_readme_fetches_to_batch_backfill(self):
         self.github.star_pages = [repo("alpha/one")]
+        result = self.service.sync_stars()
+
+        self.assertEqual(result["sync"]["added"], 1)
+        self.assertEqual(self.github.readme_calls, 0)
+        self.assertEqual(self.service.store.get_repo("alpha/one")["readme_hash"], "")
+
+    def test_sync_readmes_batches_missing_readmes_and_sync_stars_reuses_them(self):
+        self.github.star_pages = [repo("alpha/one"), repo("beta/two")]
         self.service.sync_stars()
-        first_readme_calls = self.github.readme_calls
+
+        first = self.service.sync_readmes(limit=1)
+
+        self.assertEqual(first["sync"]["status"], "readmes_refreshed")
+        self.assertEqual(first["sync"]["readmes_synced"], 1)
+        self.assertEqual(first["sync"]["remaining"], 1)
+        self.assertEqual(self.github.readme_calls, 1)
 
         second = self.service.sync_stars()
 
         self.assertEqual(second["sync"]["updated"], 0)
-        self.assertEqual(self.github.readme_calls, first_readme_calls)
+        self.assertEqual(self.github.readme_calls, 1)
+
+    def test_started_sync_run_does_not_make_ttl_cache_fresh(self):
+        self.github.star_pages = [repo("alpha/one")]
+        self.service.sync_stars()
+        self.service.store.set_last_sync_started_at("2000-01-01T00:00:00Z")
+        self.service.store.record_sync("started", message="interrupted")
+
+        self.github.star_pages = [repo("alpha/one"), repo("beta/two")]
+        refreshed = self.service.search_stars("beta", max_cache_age_minutes=360)
+
+        self.assertEqual(refreshed["sync"]["status"], "refreshed")
+        self.assertEqual(refreshed["sync"]["added"], 1)
+        self.assertEqual(refreshed["results"][0]["full_name"], "beta/two")
+
+    def test_failed_sync_is_recorded_without_becoming_fresh_cache(self):
+        self.github.fail_sync = True
+
+        with self.assertRaises(RuntimeError):
+            self.service.sync_stars()
+
+        last = self.service.store.get_last_sync()
+        self.assertEqual(last["status"], "failed")
+        self.assertIn("network down", last["message"])
 
     def test_save_analysis_clears_stale_state_and_list_categories_uses_it(self):
         self.github.star_pages = [repo("alpha/one")]
@@ -190,6 +227,7 @@ class ServiceTest(unittest.TestCase):
             "beta/rich-agent": "agent mcp memory helper",
         }
         self.service.sync_stars()
+        self.service.sync_readmes(limit=10)
         self.service.save_analysis(
             "beta/rich-agent",
             summary="Agent memory helper",

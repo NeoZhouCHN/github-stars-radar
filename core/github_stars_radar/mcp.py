@@ -3,6 +3,7 @@ import json
 
 TOOL_NAMES = [
     "sync_stars",
+    "sync_readmes",
     "list_star_changes",
     "get_unanalyzed_stars",
     "list_categories",
@@ -19,6 +20,11 @@ TOOL_SCHEMAS = {
     "sync_stars": {
         "type": "object",
         "properties": {"include_removed": {"type": "boolean", "default": True}},
+        "additionalProperties": False,
+    },
+    "sync_readmes": {
+        "type": "object",
+        "properties": {"limit": {"type": "integer", "default": 25, "minimum": 1}},
         "additionalProperties": False,
     },
     "list_star_changes": {
@@ -174,7 +180,8 @@ def handle_request(service, request):
 
 def _description(name):
     descriptions = {
-        "sync_stars": "Force sync current user's starred repositories from GitHub.",
+        "sync_stars": "Force a fast metadata sync of current user's starred repositories from GitHub.",
+        "sync_readmes": "Backfill missing README cache entries in small batches.",
         "list_star_changes": "List recent added, removed, and updated star changes.",
         "get_unanalyzed_stars": "List local stars without saved analysis or with stale analysis.",
         "list_categories": "List category counts from saved analysis and fallback uncategorized state.",

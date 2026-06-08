@@ -30,7 +30,7 @@ def main():
     require_text(".env.example", ["GITHUB_STARS_RADAR_DB="])
     require_text("prompts/repo-analysis.zh.md", ["summary", "tags", "category", "platforms", "notes"])
     require_text("prompts/repo-analysis.en.md", ["summary", "tags", "category", "platforms", "notes"])
-    require_text("skills/github-stars-radar/SKILL.md", ["search_stars", "recommend_stars_for_task", "3 mature external projects"])
+    require_text("skills/github-stars-radar/SKILL.md", ["search_stars", "recommend_stars_for_task", "sync_readmes", "3 mature external projects"])
 
     plugin = require_json("adapters/codex/.codex-plugin/plugin.json")
     if plugin["name"] != "github-stars-radar":

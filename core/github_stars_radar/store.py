@@ -84,6 +84,13 @@ class StarsStore:
         self.conn.commit()
         return cursor.lastrowid, started_at
 
+    def update_sync(self, run_id, status, added=0, removed=0, updated=0, message=""):
+        self.conn.execute(
+            "UPDATE sync_runs SET status = ?, added = ?, removed = ?, updated = ?, message = ? WHERE id = ?",
+            (status, added, removed, updated, message, run_id),
+        )
+        self.conn.commit()
+
     def add_change(self, run_id, full_name, change_type):
         self.conn.execute(
             "INSERT INTO star_changes (run_id, full_name, change_type, created_at) VALUES (?, ?, ?, ?)",
@@ -93,6 +100,10 @@ class StarsStore:
 
     def get_last_sync(self):
         row = self.conn.execute("SELECT * FROM sync_runs ORDER BY id DESC LIMIT 1").fetchone()
+        return dict(row) if row else None
+
+    def get_last_successful_sync(self):
+        row = self.conn.execute("SELECT * FROM sync_runs WHERE status = 'refreshed' ORDER BY id DESC LIMIT 1").fetchone()
         return dict(row) if row else None
 
     def set_last_sync_started_at(self, started_at):
@@ -202,12 +213,29 @@ class StarsStore:
         row = self.conn.execute("SELECT readme_text FROM repos WHERE full_name = ?", (full_name,)).fetchone()
         return row["readme_text"] if row else ""
 
+    def update_repo_readme(self, full_name, readme_hash, readme_text, analysis_stale):
+        self.conn.execute(
+            "UPDATE repos SET readme_hash = ?, readme_text = ?, analysis_stale = ? WHERE full_name = ?",
+            (readme_hash, readme_text, 1 if analysis_stale else 0, full_name),
+        )
+        self.conn.commit()
+
     def list_repos(self, include_removed=False):
         sql = "SELECT * FROM repos"
         if not include_removed:
             sql += " WHERE removed = 0"
         sql += " ORDER BY full_name"
         return [self._row_to_repo(row) for row in self.conn.execute(sql).fetchall()]
+
+    def list_repos_missing_readme(self, limit=25):
+        rows = self.conn.execute(
+            "SELECT * FROM repos WHERE removed = 0 AND readme_hash = '' ORDER BY full_name LIMIT ?",
+            (int(limit),),
+        ).fetchall()
+        return [self._row_to_repo(row) for row in rows]
+
+    def count_repos_missing_readme(self):
+        return self.conn.execute("SELECT COUNT(*) AS count FROM repos WHERE removed = 0 AND readme_hash = ''").fetchone()["count"]
 
     def has_any_repo(self):
         return self.conn.execute("SELECT 1 FROM repos LIMIT 1").fetchone() is not None

@@ -74,7 +74,7 @@ The following sections show the manual install routes for Codex, Claude Code, Op
 
 ## MCP Vs Plugin
 
-The MCP server provides the actual tools: `sync_stars`, `search_stars`, `recommend_stars_for_task`, `get_readme`, `save_analysis`, and more.
+The MCP server provides the actual tools: `sync_stars`, `sync_readmes`, `search_stars`, `recommend_stars_for_task`, `get_readme`, `save_analysis`, and more.
 
 Plugins are installation and guidance bundles. Codex and Claude Code can use plugin metadata and skills/instructions. OpenClaw and Hermes should use the generic stdio MCP configuration unless they have a verified plugin format for your environment.
 
@@ -106,7 +106,7 @@ Recommended flow:
 3. Paste a GitHub token to generate local `.env`.
 4. Generate `generated/github-stars-radar.mcp.json`.
 5. Add the generated MCP config to Codex, Claude Code, OpenClaw, or Hermes.
-6. In the AI client, run `sync_stars` or `search_stars` to test it.
+6. In the AI client, run `sync_stars` or `search_stars` to test it. If you want README cache coverage, run `sync_readmes` in batches.
 
 The installer installs the tool and generates config files. It does not silently modify every AI client configuration because client schemas and config locations vary.
 
@@ -191,6 +191,13 @@ OpenClaw / Hermes:
 ```
 
 On Windows, use `py` if that is your working Python launcher.
+
+## Cache Strategy
+
+- `sync_stars` is a fast metadata sync. It does not batch-fetch README files.
+- `sync_readmes` backfills missing README cache entries in small batches. The default batch size is 25.
+- TTL freshness is based only on a successfully completed `sync_stars` run. Interrupted or failed sync attempts do not make the cache look fresh.
+- On first use with many starred repositories, run `sync_stars` first, then call `sync_readmes` repeatedly only when README text is useful for deeper matching.
 
 ## License
 

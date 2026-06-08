@@ -33,56 +33,85 @@ class StarsRadarService:
         self.github = github or GitHubClient()
 
     def sync_stars(self, include_removed=True):
-        repos = self.github.list_starred_repos()
         run_id, _ = self.store.record_sync("started")
-        remote_names = {item["full_name"] for item in repos}
-        local_by_name = {item["full_name"]: item for item in self.store.list_repos(include_removed=True)}
         added = removed = updated = 0
+        try:
+            repos = self.github.list_starred_repos()
+            remote_names = {item["full_name"] for item in repos}
+            local_by_name = {item["full_name"]: item for item in self.store.list_repos(include_removed=True)}
 
-        for item in repos:
-            normalized = self._normalize_repo(item)
-            existing = local_by_name.get(normalized["full_name"])
-            metadata_changed = existing is None or existing["metadata_hash"] != normalized["metadata_hash"] or existing["removed"]
-            if metadata_changed or not existing.get("readme_hash", ""):
-                try:
-                    readme = self.github.get_readme(normalized["full_name"])
-                except Exception:
-                    readme = ""
-                normalized["readme_hash"] = _hash_text(readme)
-                normalized["readme_text"] = readme
-            else:
-                normalized["readme_hash"] = existing["readme_hash"]
-                normalized["readme_text"] = self.store.get_readme_text(normalized["full_name"])
-            if existing is None:
-                added += 1
-                self.store.add_change(run_id, normalized["full_name"], "added")
-                normalized["analysis_stale"] = True
-            else:
-                changed = (
-                    metadata_changed
-                    or existing["readme_hash"] != normalized["readme_hash"]
-                    or existing["prompt_version"] not in ("", PROMPT_VERSION)
-                )
-                if changed:
-                    updated += 1
-                    self.store.add_change(run_id, normalized["full_name"], "updated")
-                normalized["analysis_stale"] = changed or existing["analysis_stale"]
-            self.store.upsert_repo(normalized)
+            for item in repos:
+                normalized = self._normalize_repo(item)
+                existing = local_by_name.get(normalized["full_name"])
+                metadata_changed = existing is None or existing["metadata_hash"] != normalized["metadata_hash"] or existing["removed"]
+                if existing:
+                    normalized["readme_hash"] = existing["readme_hash"]
+                    normalized["readme_text"] = self.store.get_readme_text(normalized["full_name"])
+                else:
+                    normalized["readme_hash"] = ""
+                    normalized["readme_text"] = ""
+                if existing is None:
+                    added += 1
+                    self.store.add_change(run_id, normalized["full_name"], "added")
+                    normalized["analysis_stale"] = True
+                else:
+                    changed = metadata_changed or existing["prompt_version"] not in ("", PROMPT_VERSION)
+                    if changed:
+                        updated += 1
+                        self.store.add_change(run_id, normalized["full_name"], "updated")
+                    normalized["analysis_stale"] = changed or existing["analysis_stale"]
+                self.store.upsert_repo(normalized)
 
-        if include_removed:
-            for full_name, existing in local_by_name.items():
-                if full_name not in remote_names and not existing["removed"]:
-                    removed += 1
-                    self.store.mark_removed(full_name)
-                    self.store.add_change(run_id, full_name, "removed")
+            if include_removed:
+                for full_name, existing in local_by_name.items():
+                    if full_name not in remote_names and not existing["removed"]:
+                        removed += 1
+                        self.store.mark_removed(full_name)
+                        self.store.add_change(run_id, full_name, "removed")
 
-        message = f"sync: refreshed, added {added}, removed {removed}, updated {updated}"
-        self.store.conn.execute(
-            "UPDATE sync_runs SET status = ?, added = ?, removed = ?, updated = ?, message = ? WHERE id = ?",
-            ("refreshed", added, removed, updated, message, run_id),
-        )
-        self.store.conn.commit()
-        return {"sync": {"status": "refreshed", "added": added, "removed": removed, "updated": updated, "message": message}}
+            message = f"sync: refreshed, added {added}, removed {removed}, updated {updated}"
+            self.store.update_sync(run_id, "refreshed", added, removed, updated, message)
+            return {"sync": {"status": "refreshed", "added": added, "removed": removed, "updated": updated, "message": message}}
+        except Exception as exc:
+            message = f"sync: failed ({exc})"
+            self.store.update_sync(run_id, "failed", added, removed, updated, message)
+            raise
+
+    def sync_readmes(self, limit=25):
+        run_id, _ = self.store.record_sync("readmes_started")
+        repos = self.store.list_repos_missing_readme(limit)
+        synced = updated = failed = 0
+        for repo in repos:
+            try:
+                readme = self.github.get_readme(repo["full_name"])
+            except Exception:
+                failed += 1
+                continue
+            readme_hash = _hash_text(readme)
+            changed = repo["readme_hash"] not in ("", readme_hash)
+            self.store.update_repo_readme(
+                repo["full_name"],
+                readme_hash,
+                readme,
+                repo["analysis_stale"] or changed,
+            )
+            if changed:
+                updated += 1
+                self.store.add_change(run_id, repo["full_name"], "updated")
+            synced += 1
+        remaining = self.store.count_repos_missing_readme()
+        status = "readmes_refreshed" if failed == 0 else "readmes_partial"
+        message = f"sync_readmes: synced {synced}, failed {failed}, remaining {remaining}"
+        self.store.update_sync(run_id, status, synced, 0, updated, message)
+        return {
+            "sync": {
+                "status": status,
+                "readmes_synced": synced,
+                "failed": failed,
+                "remaining": remaining,
+                "message": message,
+            }
+        }
 
     def list_star_changes(self, limit=50):
         return {"sync": self._sync_status_skipped(), "changes": self.store.list_changes(limit)}
@@ -197,7 +226,7 @@ class StarsRadarService:
     def _ensure_fresh(self, auto_sync=True, max_cache_age_minutes=360, allow_stale=True):
         if not auto_sync:
             return self._sync_status_skipped()
-        last = self.store.get_last_sync()
+        last = self.store.get_last_successful_sync()
         needs_sync = last is None or not self.store.has_any_repo()
         age_minutes = None
         if last:
@@ -216,13 +245,13 @@ class StarsRadarService:
 
     def _sync_status_skipped(self, age_minutes=None):
         if age_minutes is None:
-            last = self.store.get_last_sync()
+            last = self.store.get_last_successful_sync()
             if last:
                 started = _parse_time(last["started_at"])
                 if started:
                     age_minutes = int((datetime.now(timezone.utc) - started).total_seconds() // 60)
         if age_minutes is None:
-            return {"status": "skipped", "message": "sync: skipped, no cache age available"}
+            return {"status": "skipped", "message": "sync: skipped, no successful sync available"}
         return {"status": "skipped", "message": f"sync: skipped, cache age {age_minutes} minutes", "cache_age_minutes": age_minutes}
 
     def _normalize_repo(self, item):

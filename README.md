@@ -84,7 +84,7 @@
 | Codex plugin | Codex | 把 MCP 配置和说明打包起来，安装更方便 |
 | Claude Code plugin | Claude Code | 把 MCP 配置、skills/说明一起作为插件安装 |
 
-核心功能来自 MCP server，所以无论用 plugin 还是 MCP，调用的工具都是同一套：`sync_stars`、`search_stars`、`recommend_stars_for_task`、`get_readme`、`save_analysis` 等。
+核心功能来自 MCP server，所以无论用 plugin 还是 MCP，调用的工具都是同一套：`sync_stars`、`sync_readmes`、`search_stars`、`recommend_stars_for_task`、`get_readme`、`save_analysis` 等。
 
 区别在于：plugin 更像安装包和说明书，MCP 是真正提供工具调用的服务。Skills/说明能不能自动触发，取决于客户端是否支持 plugin/skill 机制；MCP tools 本身是通用的。
 
@@ -120,7 +120,7 @@
 3. 输入 GitHub token，生成本地 `.env`。
 4. 生成 `generated/github-stars-radar.mcp.json`。
 5. 把生成的 MCP 配置添加到 Codex、Claude Code、OpenClaw 或 Hermes。
-6. 在 AI 客户端里运行 `sync_stars` 或 `search_stars` 测试。
+6. 在 AI 客户端里运行 `sync_stars` 或 `search_stars` 测试；如需补全 README 缓存，再分批运行 `sync_readmes`。
 
 安装包只负责安装工具和生成配置文件，不会自动修改所有 AI 客户端的配置。不同客户端的 MCP 配置位置和格式可能不同，保守做法是生成可复制的配置片段。
 
@@ -285,7 +285,8 @@ Windows 可以把 `command` 改成 `py`。
 
 | Tool | 用途 |
 | --- | --- |
-| `sync_stars` | 强制同步你的 starred repositories |
+| `sync_stars` | 强制快速同步 starred repositories 的 metadata，不批量抓 README |
+| `sync_readmes` | 分批补全缺失的 README 缓存，默认一次 25 个 |
 | `search_stars` | 搜索本地 stars |
 | `recommend_stars_for_task` | 按任务推荐仓库 |
 | `get_unanalyzed_stars` | 找出还没有保存 AI 分析的仓库 |
@@ -301,6 +302,8 @@ Windows 可以把 `command` 改成 `py`。
 - `auto_sync=true`
 - `max_cache_age_minutes=360`
 - `allow_stale=true`
+- TTL 只以成功完成的 `sync_stars` 为准；中断或失败的同步不会把缓存伪装成新鲜状态。
+- 首次 Star 很多时，先用 `sync_stars` 建立 metadata 缓存，再用 `sync_readmes` 分批补 README，避免 MCP 调用超时。
 
 ## License
 

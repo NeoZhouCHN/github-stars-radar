@@ -43,6 +43,7 @@ class McpSmokeTest(unittest.TestCase):
                 self.assertEqual(
                     {
                         "sync_stars",
+                        "sync_readmes",
                         "list_star_changes",
                         "get_unanalyzed_stars",
                         "list_categories",
@@ -76,6 +77,14 @@ class McpSmokeTest(unittest.TestCase):
                     call_tool(service, "sync_stars", {"force": True})
             finally:
                 service.close()
+
+    def test_sync_readmes_schema_supports_batch_limit(self):
+        tools = {tool["name"]: tool for tool in build_tool_list()}
+
+        schema = tools["sync_readmes"]["inputSchema"]
+
+        self.assertFalse(schema["additionalProperties"])
+        self.assertEqual(schema["properties"]["limit"]["default"], 25)
 
     def test_server_accepts_standard_mcp_content_length_frames(self):
         def frame(payload):

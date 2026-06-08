@@ -14,7 +14,7 @@ Use this skill when a task may benefit from the user's own starred repositories:
 - You need a shortlist of candidates before broader web research.
 - You want to avoid repeating analysis already saved in local agent memory.
 
-Call `search_stars` for keyword lookup, `recommend_stars_for_task` for task-based ranking, and `get_star` for one known repo.
+Call `search_stars` for keyword lookup, `recommend_stars_for_task` for task-based ranking, and `get_star` for one known repo. Use `sync_stars` for a fast metadata refresh; use `sync_readmes` only when README text is needed, and run it in small batches.
 
 ## When External Research Is Still Required
 

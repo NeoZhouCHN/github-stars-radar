@@ -8,6 +8,7 @@ import tempfile
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 REQUIRED_TOOLS = {
     "sync_stars",
+    "sync_readmes",
     "list_star_changes",
     "get_unanalyzed_stars",
     "list_categories",
