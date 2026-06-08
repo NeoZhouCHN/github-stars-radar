@@ -25,8 +25,11 @@ def previous_tag(current_tag):
     return ""
 
 
-def commit_lines(revision_range):
-    output = git(["log", "--pretty=format:%h%x09%s", revision_range]) if revision_range else git(["log", "--pretty=format:%h%x09%s", "-20"])
+def commit_lines(revision_range, target_ref):
+    if revision_range:
+        output = git(["log", "--pretty=format:%h%x09%s", revision_range])
+    else:
+        output = git(["log", "--pretty=format:%h%x09%s", "-20", target_ref])
     return [line.split("\t", 1) for line in output.splitlines() if "\t" in line]
 
 
@@ -44,11 +47,11 @@ def repo_url():
     return f"https://github.com/{repo}"
 
 
-def render(version, output_path):
+def render(version, output_path, target_ref="HEAD"):
     current_tag = f"v{version}"
     prev = previous_tag(current_tag)
-    revision_range = f"{prev}..HEAD" if prev else ""
-    commits = commit_lines(revision_range)
+    revision_range = f"{prev}..{target_ref}" if prev else ""
+    commits = commit_lines(revision_range, target_ref)
     grouped = {title: [] for title, _ in CATEGORIES}
     grouped["Other Changes"] = []
     base_url = repo_url()
@@ -87,8 +90,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--version", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--target-ref", default="HEAD")
     args = parser.parse_args()
-    render(args.version, args.output)
+    render(args.version, args.output, args.target_ref)
 
 
 if __name__ == "__main__":

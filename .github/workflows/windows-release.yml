@@ -115,7 +115,7 @@ jobs:
         run: |
           set -euo pipefail
           tag="v${{ inputs.version }}"
-          python scripts/generate_release_notes.py --version "${{ inputs.version }}" --output release-notes.md
+          python scripts/generate_release_notes.py --version "${{ inputs.version }}" --target-ref "${{ github.sha }}" --output release-notes.md
           if ! gh release view "$tag" >/dev/null 2>&1; then
             gh release create "$tag" \
               --target "${{ github.sha }}" \
