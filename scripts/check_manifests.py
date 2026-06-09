@@ -102,7 +102,7 @@ def main():
         [
             "Windows Packaging",
             "publish_release",
-            "generated release notes",
+            "GitHub-native generated release notes",
             "GitHub **Release**",
             "GitHub **Packages**",
             ".github/release.yml",
@@ -115,8 +115,10 @@ def main():
         [
             "workflow_dispatch",
             "publish_release",
+            "--generate-notes",
             "generate_release_notes.py",
             "--notes-file",
+            "preserving existing release notes",
             "--clobber",
             "actions/upload-artifact@v4",
         ],

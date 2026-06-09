@@ -115,17 +115,19 @@ jobs:
         run: |
           set -euo pipefail
           tag="v${{ inputs.version }}"
-          python scripts/generate_release_notes.py --version "${{ inputs.version }}" --target-ref "${{ github.sha }}" --output release-notes.md
           if ! gh release view "$tag" >/dev/null 2>&1; then
-            gh release create "$tag" \
+            if ! gh release create "$tag" \
               --target "${{ github.sha }}" \
               --title "GitHub Stars Radar $tag" \
-              --notes-file release-notes.md
+              --generate-notes; then
+              python scripts/generate_release_notes.py --version "${{ inputs.version }}" --target-ref "${{ github.sha }}" --output release-notes.md
+              gh release create "$tag" \
+                --target "${{ github.sha }}" \
+                --title "GitHub Stars Radar $tag" \
+                --notes-file release-notes.md
+            fi
           else
-            gh release edit "$tag" \
-              --target "${{ github.sha }}" \
-              --title "GitHub Stars Radar $tag" \
-              --notes-file release-notes.md
+            echo "Release $tag already exists; preserving existing release notes."
           fi
           mapfile -d '' assets < <(find release-assets -type f -print0)
           gh release upload "$tag" "${assets[@]}" --clobber
