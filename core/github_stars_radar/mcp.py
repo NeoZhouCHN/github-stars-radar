@@ -140,10 +140,6 @@ def call_tool(service, name, arguments=None):
                     "type": "text",
                     "text": _render_recommendation_markdown(result),
                 },
-                {
-                    "type": "text",
-                    "text": json.dumps(result, ensure_ascii=False, indent=2),
-                },
             ]
         }
     return {
@@ -168,7 +164,12 @@ def _validate_arguments(name, arguments):
 
 
 def _render_recommendation_markdown(result):
-    lines = ["# Recommendation shortlist", ""]
+    lines = [
+        "# Recommendation shortlist",
+        "",
+        "Preserve the score shown on each recommendation line.",
+        "",
+    ]
     sync = result.get("sync") or {}
     if sync.get("status") == "failed":
         lines.extend([f"Sync: {sync.get('message', 'failed')}", ""])
@@ -181,7 +182,7 @@ def _render_recommendation_markdown(result):
         summary = analysis.get("summary") or repo.get("description") or "No summary saved yet."
         lines.extend(
             [
-                f"{index}. {repo.get('full_name')} - {repo.get('score_summary', 'Score unavailable.')}",
+                f"{index}. {repo.get('score_summary', 'Score unavailable.')} - {repo.get('full_name')}",
                 f"   - Why: {summary}",
                 f"   - Fit: {repo.get('fit_reason', '')}",
                 f"   - Watch: {repo.get('not_fit_reason', '')}",

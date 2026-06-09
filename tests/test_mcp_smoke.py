@@ -96,11 +96,11 @@ class McpSmokeTest(unittest.TestCase):
                     {"task": "agent python memory", "auto_sync": True, "limit": 1},
                 )
 
-                self.assertEqual(len(response["content"]), 2)
-                self.assertIn("Recommendation shortlist", response["content"][0]["text"])
+                self.assertEqual(len(response["content"]), 1)
+                self.assertIn("Preserve the score shown on each recommendation line.", response["content"][0]["text"])
                 self.assertIn("Score", response["content"][0]["text"])
+                self.assertRegex(response["content"][0]["text"], r"1\. Score \d+\. .* - alpha/one")
                 self.assertIn("alpha/one", response["content"][0]["text"])
-                self.assertIn('"recommendations"', response["content"][1]["text"])
             finally:
                 service.close()
 
