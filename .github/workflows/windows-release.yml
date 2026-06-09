@@ -116,16 +116,20 @@ jobs:
           set -euo pipefail
           tag="v${{ inputs.version }}"
           if ! gh release view "$tag" >/dev/null 2>&1; then
-            if ! gh release create "$tag" \
+            if gh api "repos/${{ github.repository }}/releases/generate-notes" \
+              -f tag_name="$tag" \
+              -f target_commitish="${{ github.sha }}" \
+              --jq .body > release-notes.md &&
+              grep -Eq '^[[:space:]]*[*-] ' release-notes.md; then
+              echo "Using GitHub-native generated release notes."
+            else
+              echo "GitHub-native release notes had no change entries; using commit fallback."
+              python scripts/generate_release_notes.py --version "${{ inputs.version }}" --target-ref "${{ github.sha }}" --output release-notes.md
+            fi
+            gh release create "$tag" \
               --target "${{ github.sha }}" \
               --title "GitHub Stars Radar $tag" \
-              --generate-notes; then
-              python scripts/generate_release_notes.py --version "${{ inputs.version }}" --target-ref "${{ github.sha }}" --output release-notes.md
-              gh release create "$tag" \
-                --target "${{ github.sha }}" \
-                --title "GitHub Stars Radar $tag" \
-                --notes-file release-notes.md
-            fi
+              --notes-file release-notes.md
           else
             echo "Release $tag already exists; preserving existing release notes."
           fi

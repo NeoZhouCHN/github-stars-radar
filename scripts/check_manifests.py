@@ -115,7 +115,9 @@ def main():
         [
             "workflow_dispatch",
             "publish_release",
-            "--generate-notes",
+            "releases/generate-notes",
+            "grep -Eq",
+            "no change entries",
             "generate_release_notes.py",
             "--notes-file",
             "preserving existing release notes",
