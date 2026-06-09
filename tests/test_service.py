@@ -257,6 +257,11 @@ class ServiceTest(unittest.TestCase):
         self.assertGreater(top["score_breakdown"]["readme_match"], 0)
         self.assertGreater(top["score_breakdown"]["topic_match"], 0)
         self.assertGreater(top["score_breakdown"]["analysis_quality"], 0)
+        self.assertEqual(
+            top["score_summary"],
+            "Score 62. Top signals: GitHub topics 12, metadata/analysis text 11, recent activity 10.",
+        )
+        self.assertTrue(top["fit_reason"].startswith("Score 62."))
 
 
 if __name__ == "__main__":

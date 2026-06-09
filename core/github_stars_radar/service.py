@@ -176,10 +176,12 @@ class StarsRadarService:
         for repo in self.store.list_repos():
             score, breakdown = self._score_repo(repo, terms)
             if self._has_query_match(breakdown):
+                score_summary = self._score_summary(score, breakdown)
                 item = dict(repo)
                 item["score"] = score
                 item["score_breakdown"] = breakdown
-                item["fit_reason"] = self._fit_reason(breakdown)
+                item["score_summary"] = score_summary
+                item["fit_reason"] = f"{score_summary} {self._fit_reason(breakdown)}"
                 item["not_fit_reason"] = "Validate current README and license before adopting."
                 item["next_validation"] = "Open README and run the referenced project locally if it becomes implementation-critical."
                 scored.append(item)
@@ -347,6 +349,34 @@ class StarsRadarService:
             if value > 0
         ][:5]
         return f"Strongest signals: {', '.join(matched)}"
+
+    def _score_summary(self, score, breakdown):
+        labels = {
+            "text_match": "metadata/analysis text",
+            "topic_match": "GitHub topics",
+            "language_match": "language",
+            "readme_match": "README",
+            "popularity": "stars",
+            "recency": "recent activity",
+            "analysis_quality": "saved analysis",
+        }
+        weights = {
+            "text_match": 1,
+            "topic_match": 2,
+            "language_match": 1,
+            "readme_match": 2,
+            "popularity": 1,
+            "recency": 1,
+            "analysis_quality": 1,
+        }
+        signals = []
+        for key, value in breakdown.items():
+            contribution = value * weights[key]
+            if contribution > 0:
+                signals.append((labels[key], contribution))
+        top = sorted(signals, key=lambda item: (-item[1], item[0]))[:3]
+        signal_text = ", ".join(f"{label} {value}" for label, value in top)
+        return f"Score {score}. Top signals: {signal_text}."
 
     def _recency_score(self, repo):
         timestamp = repo["pushed_at"] or repo["updated_at"]
