@@ -17,6 +17,10 @@
   <a href="README.en.md"><img src="https://img.shields.io/badge/README-EN-111827?style=for-the-badge" alt="English" /></a>
 </p>
 
+<p align="center">
+  <img src="docs/assets/github-stars-radar-flow-en.png" alt="GitHub Stars Radar workflow diagram" />
+</p>
+
 ## English
 
 **GitHub Stars Radar** turns your GitHub starred repositories into a local knowledge base that AI coding agents can search and reuse.

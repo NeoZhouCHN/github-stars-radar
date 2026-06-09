@@ -17,6 +17,10 @@
   <a href="README.en.md"><img src="https://img.shields.io/badge/README-EN-111827?style=for-the-badge" alt="English" /></a>
 </p>
 
+<p align="center">
+  <img src="docs/assets/github-stars-radar-flow-zh.png" alt="GitHub Stars Radar 工作流示意图" />
+</p>
+
 ## 中文
 
 **GitHub Stars Radar** 可以把你 GitHub 里点过 Star 的仓库，变成 Codex、Claude Code、OpenClaw、Hermes 等 AI 编程工具能查询的“本地资料库”。
