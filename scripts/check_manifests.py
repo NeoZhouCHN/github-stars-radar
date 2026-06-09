@@ -102,6 +102,7 @@ def main():
         [
             "Windows Packaging",
             "publish_release",
+            "`auto` resolves to the next patch version",
             "GitHub-native generated release notes",
             "GitHub **Release**",
             "GitHub **Packages**",
@@ -115,6 +116,9 @@ def main():
         [
             "workflow_dispatch",
             "publish_release",
+            'default: "auto"',
+            "Resolve package version",
+            "needs.resolve-version.outputs.version",
             "releases/generate-notes",
             "grep -Eq",
             "no change entries",

@@ -10,9 +10,9 @@ This repository includes a manually triggered GitHub Actions workflow:
 .github/workflows/windows-release.yml
 ```
 
-After updating the project, open **Actions -> Build Windows Package -> Run workflow**, enter a version, and choose whether to publish a GitHub Release.
+After updating the project, open **Actions -> Build Windows Package -> Run workflow**, keep `version` as `auto` or enter an explicit version, and choose whether to publish a GitHub Release.
 
-Use SemVer-style versions:
+`auto` resolves to the next patch version from the latest stable `v*` tag. For example, if the latest stable tag is `v0.1.4`, the workflow builds `0.1.5`. Use an explicit SemVer-style version when publishing a minor, major, prerelease, or rerun:
 
 ```text
 0.1.1
@@ -24,13 +24,14 @@ The workflow automatically prefixes release tags with `v`, so version `0.1.1` cr
 
 The workflow:
 
-1. Runs unit tests, MCP smoke test, and manifest checks.
-2. Builds `github-stars-radar.exe` with PyInstaller.
-3. Builds `GitHubStarsRadarConfig.exe` for Windows packages.
-4. Creates Windows, macOS, and Linux portable packages.
-5. Builds `GitHubStarsRadarSetup-<version>.exe` with Inno Setup on Windows.
-6. Creates `SHA256SUMS.txt`.
-7. Uploads packages, installer, and checksums as workflow artifacts.
+1. Resolves the package version from `auto` or the explicit input.
+2. Runs unit tests, MCP smoke test, and manifest checks.
+3. Builds `github-stars-radar.exe` with PyInstaller.
+4. Builds `GitHubStarsRadarConfig.exe` for Windows packages.
+5. Creates Windows, macOS, and Linux portable packages.
+6. Builds `GitHubStarsRadarSetup-<version>.exe` with Inno Setup on Windows.
+7. Creates `SHA256SUMS.txt`.
+8. Uploads packages, installer, and checksums as workflow artifacts.
 
 ## Output Destinations
 

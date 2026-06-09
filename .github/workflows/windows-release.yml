@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Package version"
+        description: "Package version (auto = next patch from latest stable v* tag)"
         required: true
-        default: "0.1.0"
+        default: "auto"
       publish_release:
         description: "Create or update a GitHub Release"
         required: true
@@ -17,8 +17,49 @@ on:
           - "true"
 
 jobs:
+  resolve-version:
+    name: Resolve package version
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout tags
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve package version
+        id: version
+        shell: bash
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          requested="$REQUESTED_VERSION"
+          if [[ -z "$requested" || "$requested" == "auto" ]]; then
+            latest="$(git tag --list "v*" --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)"
+            if [[ -z "$latest" ]]; then
+              version="0.1.0"
+            else
+              IFS=. read -r major minor patch <<< "${latest#v}"
+              version="$major.$minor.$((patch + 1))"
+            fi
+          else
+            version="${requested#v}"
+          fi
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid package version: $version" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Resolved package version: $version"
+
   build:
-    name: Build ${{ matrix.platform }}
+    name: Build ${{ matrix.platform }} ${{ needs.resolve-version.outputs.version }}
+    needs: resolve-version
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
@@ -30,13 +71,10 @@ jobs:
         include:
           - platform: windows
             runner: windows-2025
-            artifact: github-stars-radar-windows-${{ inputs.version }}
           - platform: macos
             runner: macos-14
-            artifact: github-stars-radar-macos-${{ inputs.version }}
           - platform: linux
             runner: ubuntu-24.04
-            artifact: github-stars-radar-linux-${{ inputs.version }}
 
     steps:
       - name: Checkout
@@ -62,36 +100,38 @@ jobs:
       - name: Build Windows package
         if: ${{ matrix.platform == 'windows' }}
         shell: pwsh
-        run: .\scripts\build_windows.ps1 -Version "${{ inputs.version }}"
+        run: .\scripts\build_windows.ps1 -Version "${{ needs.resolve-version.outputs.version }}"
 
       - name: Build portable package
         if: ${{ matrix.platform != 'windows' }}
         shell: bash
-        run: python scripts/build_portable.py --version "${{ inputs.version }}" --platform "${{ matrix.platform }}"
+        run: python scripts/build_portable.py --version "${{ needs.resolve-version.outputs.version }}" --platform "${{ matrix.platform }}"
 
       - name: Upload Windows artifacts
         if: ${{ matrix.platform == 'windows' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact }}
+          name: github-stars-radar-windows-${{ needs.resolve-version.outputs.version }}
           path: |
-            dist/GitHubStarsRadar-${{ inputs.version }}-windows-x64.zip
-            dist/GitHubStarsRadarSetup-${{ inputs.version }}.exe
+            dist/GitHubStarsRadar-${{ needs.resolve-version.outputs.version }}-windows-x64.zip
+            dist/GitHubStarsRadarSetup-${{ needs.resolve-version.outputs.version }}.exe
             dist/SHA256SUMS.txt
 
       - name: Upload portable artifacts
         if: ${{ matrix.platform != 'windows' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact }}
+          name: github-stars-radar-${{ matrix.platform }}-${{ needs.resolve-version.outputs.version }}
           path: |
-            dist/GitHubStarsRadar-${{ inputs.version }}-${{ matrix.platform }}-x64.tar.gz
+            dist/GitHubStarsRadar-${{ needs.resolve-version.outputs.version }}-${{ matrix.platform }}-x64.tar.gz
             dist/SHA256SUMS-${{ matrix.platform }}.txt
 
   publish-release:
     name: Publish GitHub Release
     if: ${{ inputs.publish_release == 'true' }}
-    needs: build
+    needs:
+      - resolve-version
+      - build
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -114,7 +154,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          tag="v${{ inputs.version }}"
+          tag="v${{ needs.resolve-version.outputs.version }}"
           if ! gh release view "$tag" >/dev/null 2>&1; then
             if gh api "repos/${{ github.repository }}/releases/generate-notes" \
               -f tag_name="$tag" \
@@ -124,7 +164,7 @@ jobs:
               echo "Using GitHub-native generated release notes."
             else
               echo "GitHub-native release notes had no change entries; using commit fallback."
-              python scripts/generate_release_notes.py --version "${{ inputs.version }}" --target-ref "${{ github.sha }}" --output release-notes.md
+              python scripts/generate_release_notes.py --version "${{ needs.resolve-version.outputs.version }}" --target-ref "${{ github.sha }}" --output release-notes.md
             fi
             gh release create "$tag" \
               --target "${{ github.sha }}" \
