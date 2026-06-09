@@ -97,10 +97,30 @@ class McpSmokeTest(unittest.TestCase):
                 )
 
                 self.assertEqual(len(response["content"]), 1)
-                self.assertIn("Preserve the score shown on each recommendation line.", response["content"][0]["text"])
-                self.assertIn("Score", response["content"][0]["text"])
+                self.assertIn("请保留每条的评分、适合、不适合、判断和下一步。", response["content"][0]["text"])
+                self.assertIn("评分：", response["content"][0]["text"])
+                self.assertIn("适合：", response["content"][0]["text"])
+                self.assertIn("不适合：", response["content"][0]["text"])
+                self.assertIn("判断：", response["content"][0]["text"])
+                self.assertIn("下一步：", response["content"][0]["text"])
                 self.assertRegex(response["content"][0]["text"], r"1\. Score \d+ - alpha/one - Score \d+\.")
                 self.assertIn("alpha/one", response["content"][0]["text"])
+            finally:
+                service.close()
+
+    def test_search_results_return_display_markdown_with_scores(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            service = StarsRadarService(os.path.join(tmp, "stars.sqlite"), github=FakeGitHubClient())
+            try:
+                response = call_tool(service, "search_stars", {"query": "agent", "limit": 1})
+
+                self.assertEqual(len(response["content"]), 1)
+                self.assertIn("Search results", response["content"][0]["text"])
+                self.assertIn("评分：", response["content"][0]["text"])
+                self.assertIn("适合：", response["content"][0]["text"])
+                self.assertIn("不适合：", response["content"][0]["text"])
+                self.assertIn("判断：", response["content"][0]["text"])
+                self.assertRegex(response["content"][0]["text"], r"1\. Score \d+ - alpha/one - Score \d+\.")
             finally:
                 service.close()
 

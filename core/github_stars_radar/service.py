@@ -166,7 +166,8 @@ class StarsRadarService:
             haystack = self._repo_text(repo)
             if q_terms and not all(term in haystack for term in q_terms):
                 continue
-            results.append(repo)
+            results.append(self._scored_repo(repo, q_terms))
+        results.sort(key=lambda item: (-item["score"], item["full_name"]))
         return {"sync": sync, "results": results[: int(limit)]}
 
     def recommend_stars_for_task(self, task, auto_sync=True, max_cache_age_minutes=360, allow_stale=True, limit=5):
@@ -174,17 +175,8 @@ class StarsRadarService:
         terms = _terms(task)
         scored = []
         for repo in self.store.list_repos():
-            score, breakdown = self._score_repo(repo, terms)
-            if self._has_query_match(breakdown):
-                score_summary = self._score_summary(score, breakdown)
-                item = dict(repo)
-                item["score"] = score
-                item["score_breakdown"] = breakdown
-                item["score_summary"] = score_summary
-                item["display_name"] = f"Score {score} - {repo['full_name']}"
-                item["fit_reason"] = f"{score_summary} {self._fit_reason(breakdown)}"
-                item["not_fit_reason"] = "Validate current README and license before adopting."
-                item["next_validation"] = "Open README and run the referenced project locally if it becomes implementation-critical."
+            item = self._scored_repo(repo, terms)
+            if self._has_query_match(item["score_breakdown"]):
                 scored.append(item)
         scored.sort(key=lambda item: (-item["score"], item["full_name"]))
         return {"sync": sync, "recommendations": scored[: int(limit)]}
@@ -301,6 +293,22 @@ class StarsRadarService:
                 analysis["notes"],
             ]
         ).lower()
+
+    def _scored_repo(self, repo, terms):
+        score, breakdown = self._score_repo(repo, terms)
+        score_summary = self._score_summary(score, breakdown)
+        item = dict(repo)
+        item["score"] = score
+        item["score_breakdown"] = breakdown
+        item["score_summary"] = score_summary
+        item["display_name"] = f"Score {score} - {repo['full_name']}"
+        item["description"] = f"{score_summary} {repo['description']}"
+        item["analysis"] = dict(repo["analysis"])
+        item["analysis"]["summary"] = f"{score_summary} {repo['analysis']['summary'] or repo['description']}"
+        item["fit_reason"] = f"{score_summary} {self._fit_reason(breakdown)}"
+        item["not_fit_reason"] = "Validate current README and license before adopting."
+        item["next_validation"] = "Open README and run the referenced project locally if it becomes implementation-critical."
+        return item
 
     def _score_repo(self, repo, terms):
         text = self._repo_text(repo)

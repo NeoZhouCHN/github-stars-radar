@@ -204,6 +204,10 @@ class ServiceTest(unittest.TestCase):
 
         search = self.service.search_stars("agent", auto_sync=False)
         self.assertEqual(search["results"][0]["full_name"], "alpha/agent-kit")
+        self.assertIn("score", search["results"][0])
+        self.assertTrue(search["results"][0]["display_name"].startswith("Score "))
+        self.assertTrue(search["results"][0]["description"].startswith("Score "))
+        self.assertTrue(search["results"][0]["analysis"]["summary"].startswith("Score "))
 
         recs = self.service.recommend_stars_for_task("build an agent tool", auto_sync=False)
         self.assertEqual(recs["recommendations"][0]["full_name"], "alpha/agent-kit")

@@ -138,7 +138,16 @@ def call_tool(service, name, arguments=None):
             "content": [
                 {
                     "type": "text",
-                    "text": _render_recommendation_markdown(result),
+                    "text": _render_scored_repos_markdown("Recommendation shortlist", result, "recommendations"),
+                },
+            ]
+        }
+    if name == "search_stars":
+        return {
+            "content": [
+                {
+                    "type": "text",
+                    "text": _render_scored_repos_markdown("Search results", result, "results"),
                 },
             ]
         }
@@ -163,30 +172,31 @@ def _validate_arguments(name, arguments):
         raise ValueError(f"Missing required arguments for {name}: {', '.join(missing)}")
 
 
-def _render_recommendation_markdown(result):
+def _render_scored_repos_markdown(title, result, key):
     lines = [
-        "# Recommendation shortlist",
+        f"# {title}",
         "",
-        "Preserve the score shown on each recommendation line.",
+        "请保留每条的评分、适合、不适合、判断和下一步。",
         "",
     ]
     sync = result.get("sync") or {}
     if sync.get("status") == "failed":
         lines.extend([f"Sync: {sync.get('message', 'failed')}", ""])
-    recommendations = result.get("recommendations") or []
-    if not recommendations:
+    repos = result.get(key) or []
+    if not repos:
         lines.append("No matching starred repositories found.")
         return "\n".join(lines)
-    for index, repo in enumerate(recommendations, 1):
+    for index, repo in enumerate(repos, 1):
         analysis = repo.get("analysis") or {}
         summary = analysis.get("summary") or repo.get("description") or "No summary saved yet."
         lines.extend(
             [
                 f"{index}. {repo.get('display_name', repo.get('full_name'))} - {repo.get('score_summary', 'Score unavailable.')}",
-                f"   - Why: {summary}",
-                f"   - Fit: {repo.get('fit_reason', '')}",
-                f"   - Watch: {repo.get('not_fit_reason', '')}",
-                f"   - Next: {repo.get('next_validation', '')}",
+                f"   - 评分：{repo.get('score_summary', 'Score unavailable.')}",
+                f"   - 适合：{summary}",
+                f"   - 不适合：{repo.get('not_fit_reason', '')}",
+                f"   - 判断：{repo.get('fit_reason', '')}",
+                f"   - 下一步：{repo.get('next_validation', '')}",
             ]
         )
     return "\n".join(lines)
