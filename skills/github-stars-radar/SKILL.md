@@ -34,9 +34,13 @@ Local stars are a memory aid, not proof of current best practice.
 When recommending repos, include:
 
 - repository name
+- score
+- top score signals from `score_breakdown`
 - why it fits
 - why it may not fit
 - cost or risk
 - next verification step
+
+Use the numeric `score` from `recommend_stars_for_task` directly. Summarize only the strongest 2-3 nonzero `score_breakdown` signals, such as `readme_match`, `topic_match`, `popularity`, `recency`, or `analysis_quality`; do not paste the whole JSON unless the user asks for raw output.
 
 If local sync fails but stale cache is available, keep working and disclose the stale-cache status from the tool result.
