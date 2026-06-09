@@ -86,6 +86,24 @@ class McpSmokeTest(unittest.TestCase):
         self.assertFalse(schema["additionalProperties"])
         self.assertEqual(schema["properties"]["limit"]["default"], 25)
 
+    def test_recommendations_return_display_markdown_before_json(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            service = StarsRadarService(os.path.join(tmp, "stars.sqlite"), github=FakeGitHubClient())
+            try:
+                response = call_tool(
+                    service,
+                    "recommend_stars_for_task",
+                    {"task": "agent python memory", "auto_sync": True, "limit": 1},
+                )
+
+                self.assertEqual(len(response["content"]), 2)
+                self.assertIn("Recommendation shortlist", response["content"][0]["text"])
+                self.assertIn("Score", response["content"][0]["text"])
+                self.assertIn("alpha/one", response["content"][0]["text"])
+                self.assertIn('"recommendations"', response["content"][1]["text"])
+            finally:
+                service.close()
+
     def test_server_accepts_standard_mcp_content_length_frames(self):
         def frame(payload):
             body = json.dumps(payload).encode("utf-8")

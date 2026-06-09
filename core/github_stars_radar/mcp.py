@@ -133,6 +133,19 @@ def call_tool(service, name, arguments=None):
     _validate_arguments(name, arguments)
     method = getattr(service, name)
     result = method(**arguments)
+    if name == "recommend_stars_for_task":
+        return {
+            "content": [
+                {
+                    "type": "text",
+                    "text": _render_recommendation_markdown(result),
+                },
+                {
+                    "type": "text",
+                    "text": json.dumps(result, ensure_ascii=False, indent=2),
+                },
+            ]
+        }
     return {
         "content": [
             {
@@ -152,6 +165,30 @@ def _validate_arguments(name, arguments):
     missing = [key for key in schema.get("required", []) if key not in arguments]
     if missing:
         raise ValueError(f"Missing required arguments for {name}: {', '.join(missing)}")
+
+
+def _render_recommendation_markdown(result):
+    lines = ["# Recommendation shortlist", ""]
+    sync = result.get("sync") or {}
+    if sync.get("status") == "failed":
+        lines.extend([f"Sync: {sync.get('message', 'failed')}", ""])
+    recommendations = result.get("recommendations") or []
+    if not recommendations:
+        lines.append("No matching starred repositories found.")
+        return "\n".join(lines)
+    for index, repo in enumerate(recommendations, 1):
+        analysis = repo.get("analysis") or {}
+        summary = analysis.get("summary") or repo.get("description") or "No summary saved yet."
+        lines.extend(
+            [
+                f"{index}. {repo.get('full_name')} - {repo.get('score_summary', 'Score unavailable.')}",
+                f"   - Why: {summary}",
+                f"   - Fit: {repo.get('fit_reason', '')}",
+                f"   - Watch: {repo.get('not_fit_reason', '')}",
+                f"   - Next: {repo.get('next_validation', '')}",
+            ]
+        )
+    return "\n".join(lines)
 
 
 def handle_request(service, request):
