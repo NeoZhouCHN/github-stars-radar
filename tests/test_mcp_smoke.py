@@ -99,7 +99,7 @@ class McpSmokeTest(unittest.TestCase):
                 self.assertEqual(len(response["content"]), 1)
                 self.assertIn("Preserve the score shown on each recommendation line.", response["content"][0]["text"])
                 self.assertIn("Score", response["content"][0]["text"])
-                self.assertRegex(response["content"][0]["text"], r"1\. Score \d+\. .* - alpha/one")
+                self.assertRegex(response["content"][0]["text"], r"1\. Score \d+ - alpha/one - Score \d+\.")
                 self.assertIn("alpha/one", response["content"][0]["text"])
             finally:
                 service.close()

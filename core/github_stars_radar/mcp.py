@@ -182,7 +182,7 @@ def _render_recommendation_markdown(result):
         summary = analysis.get("summary") or repo.get("description") or "No summary saved yet."
         lines.extend(
             [
-                f"{index}. {repo.get('score_summary', 'Score unavailable.')} - {repo.get('full_name')}",
+                f"{index}. {repo.get('display_name', repo.get('full_name'))} - {repo.get('score_summary', 'Score unavailable.')}",
                 f"   - Why: {summary}",
                 f"   - Fit: {repo.get('fit_reason', '')}",
                 f"   - Watch: {repo.get('not_fit_reason', '')}",

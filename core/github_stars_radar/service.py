@@ -181,6 +181,7 @@ class StarsRadarService:
                 item["score"] = score
                 item["score_breakdown"] = breakdown
                 item["score_summary"] = score_summary
+                item["display_name"] = f"Score {score} - {repo['full_name']}"
                 item["fit_reason"] = f"{score_summary} {self._fit_reason(breakdown)}"
                 item["not_fit_reason"] = "Validate current README and license before adopting."
                 item["next_validation"] = "Open README and run the referenced project locally if it becomes implementation-critical."

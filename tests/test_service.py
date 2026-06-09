@@ -261,6 +261,7 @@ class ServiceTest(unittest.TestCase):
             top["score_summary"],
             "Score 62. Top signals: GitHub topics 12, metadata/analysis text 11, recent activity 10.",
         )
+        self.assertEqual(top["display_name"], "Score 62 - beta/rich-agent")
         self.assertTrue(top["fit_reason"].startswith("Score 62."))
 
 
