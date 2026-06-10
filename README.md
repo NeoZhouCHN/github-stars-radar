@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <b>把你的 GitHub Stars 变成 AI 编程助手可以搜索和复用的本地记忆库。</b>
+  <b>把你多年收藏的开源项目，变成 AI 编程助手可调用的私人技术记忆。</b>
 </p>
 
 <p align="center">
@@ -23,11 +23,62 @@
 
 ## 中文
 
-**GitHub Stars Radar** 可以把你 GitHub 里点过 Star 的仓库，变成 Codex、Claude Code、OpenClaw、Hermes 等 AI 编程工具能查询的“本地资料库”。
+**GitHub Stars Radar** 是一个 local-first 的 AI agent 记忆层。它把你多年 Star 过的 GitHub 项目、README 快照、标签、元数据和 AI 分析结果，整理成 Codex、Claude Code、OpenClaw、Hermes 等编程助手可以通过 MCP/plugin 查询的私人技术上下文。
 
-简单说：你以前收藏过很多好项目，但写代码时经常想不起来。这个项目会把 Stars 同步到本地，让 AI 能搜索、推荐、读取 README、保存分析结果。下次做选型、找参考实现、推荐工具时，AI 可以先查你收藏过的项目，而不是每次从零开始。
+GitHub 官方 API 只能给你一份 starred repositories 列表；GitHub Stars Radar 让 AI 在做技术选型、寻找参考实现、推荐工具时，先查询你真实收藏过、筛选过、分析过的项目，再给出带评分解释的推荐。
 
-## 安装方式
+它不是 GitHub Star 管理器，不是 dashboard，也不是另一个 awesome-list。它的目标是让你的 AI 编程助手拥有一份属于你的、可复用的开源项目记忆。
+
+如果你也希望 AI 编程助手复用你多年收藏过的好项目，而不是每次从零搜索，这个项目值得先 Star。
+
+## 为什么需要它
+
+你 Star 过的仓库，其实是一份长期积累的技术偏好：你认可过的框架、工具、模板、MCP server、agent 项目、CLI、自动化脚本和参考实现。
+
+问题是，这份偏好通常只停留在 GitHub 收藏夹里。AI 编程助手默认不知道它，也不会在做选型、找参考实现或推荐工具时主动查询它。
+
+GitHub Stars Radar 把这份收藏变成一个本地优先、可查询、可复用的 agent memory layer，让不同 AI 编程助手能共享同一份私人技术上下文。
+
+## 没有它 / 有了它
+
+| 没有 GitHub Stars Radar | 有了 GitHub Stars Radar |
+| --- | --- |
+| AI 每次从零搜索项目 | AI 先查你 Star 过、筛选过的项目 |
+| GitHub Stars 只是收藏夹 | Stars 变成私人技术记忆 |
+| 不同 AI 助手互不共享上下文 | Codex、Claude Code、OpenClaw、Hermes 可复用同一份本地记忆 |
+| 推荐理由难以追踪 | 推荐结果带 `score_breakdown` 和已保存分析 |
+| 看过的仓库下次还要重新分析 | AI 可以保存 summary、tags、category 和 notes |
+
+## 适合哪些场景
+
+- 做技术选型时，让 AI 先查你认可过的项目。
+- 找参考实现时，从你的长期收藏里筛候选，而不是完全依赖实时搜索。
+- 让 Codex、Claude Code、OpenClaw、Hermes 共享同一份本地项目记忆。
+- 给 MCP server、agent 项目、CLI 工具、自动化脚本找可复用实现。
+- 让 AI 读过的仓库分析结果沉淀下来，下次继续复用。
+
+## 你可以这样问 AI
+
+```text
+先查我的 GitHub Stars。我要做一个本地优先的 MCP 工具，有哪些我收藏过的项目可以参考？
+请按适用原因、不适用原因和 score_breakdown 给我推荐。
+```
+
+这类问题才是 GitHub Stars Radar 最适合的位置：不是让你手动翻收藏夹，而是让 AI 在需要上下文时主动调用你的私人技术记忆。
+
+## 为什么不是 GitHub API 包装器？
+
+GitHub API 能返回你 Star 过哪些仓库，但它不知道：
+
+- 哪些仓库适合当前任务。
+- 哪些 README 已经被 AI 读过。
+- 哪些项目曾经被你分析、分类、打过标签。
+- 为什么某个仓库比另一个更适合作为参考。
+- 如何让多个 AI 编程助手复用同一份本地上下文。
+
+GitHub Stars Radar 做的是后一半：把原始 Stars 变成 AI agent 可查询、可复用、可解释的私人技术记忆。
+
+## 快速开始
 
 下面两种方式选一种即可，不需要先让 AI 安装再手动安装。
 
@@ -68,17 +119,17 @@
 
 后续章节分别给出 Codex、Claude Code、OpenClaw 和 Hermes 的手动配置方式。
 
-## 功能一览
+## 核心能力
 
-| 功能 | 小白解释 |
+| 能力 | 对 AI 编程助手的价值 |
 | --- | --- |
-| 同步 GitHub Stars | 把你 GitHub 账号里 Star 过的仓库拉到本地 |
-| 本地 SQLite 缓存 | 数据保存在你电脑上，不需要服务器 |
-| 新增/删除/更新检测 | 知道哪些 Star 是新加的、取消的、信息变了的 |
-| 保存 AI 分析 | AI 看过某个仓库后，可以把总结、标签、分类保存下来 |
-| 自动刷新缓存 | 缓存太旧时自动同步；同步失败也能继续用旧缓存 |
-| MCP 工具调用 | 支持 MCP 的客户端都能调用同一套 tools |
-| Plugin 增强 | Codex / Claude Code 可以用 plugin 携带 MCP 和使用说明 |
+| 本地 Stars 缓存 | 让 agent 先查你认可过的项目，而不是从互联网随机搜索 |
+| README 快照 | 让推荐基于项目真实说明，不只看 repo 名和 topic |
+| 标签、元数据和变化检测 | 帮 AI 判断项目语言、主题、活跃度和收藏变化 |
+| 保存 AI 分析 | 一个 agent 分析过的项目，后续 agent 可以复用结论 |
+| 可解释推荐 | `score_breakdown` 让推荐理由可追踪，方便你判断是否可信 |
+| TTL 自动刷新 | 缓存过期时自动同步；同步失败也能继续使用旧缓存 |
+| MCP / Plugin 接入 | Codex、Claude Code 和其他 MCP 客户端可以调用同一套 tools |
 
 ## MCP 和 Plugin 有什么区别
 

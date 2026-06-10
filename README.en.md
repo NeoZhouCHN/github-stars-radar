@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <b>Turn your GitHub stars into local memory that AI coding agents can search and reuse.</b>
+  <b>Turn years of GitHub stars into private technical memory your AI coding agents can query.</b>
 </p>
 
 <p align="center">
@@ -23,11 +23,62 @@
 
 ## English
 
-**GitHub Stars Radar** turns your GitHub starred repositories into a local knowledge base that AI coding agents can search and reuse.
+**GitHub Stars Radar** is a local-first memory layer for AI coding agents. It turns the repositories you have starred over the years, plus README snapshots, tags, metadata, and saved AI analysis, into private technical context that Codex, Claude Code, OpenClaw, Hermes, and other agents can query through MCP/plugins.
 
-In plain terms: you have starred many useful repositories, but your coding agent does not know them by default. This project syncs those stars locally, lets agents search them, fetch README content, recommend useful repositories for a task, and save structured analysis so future agents do not repeat the same work.
+The GitHub API can give you a list of starred repositories. GitHub Stars Radar helps your agent use that list as memory: when you need technology choices, reference implementations, or tool recommendations, the agent can query projects you already collected and return explainable ranked picks.
 
-## Installation Options
+It is not a GitHub star manager, not a dashboard, and not another awesome-list. It is a private, reusable open-source project memory layer for your AI coding agents.
+
+If you want your AI coding agents to reuse the open-source projects you have collected over the years instead of starting from scratch every time, this repo is worth starring.
+
+## Why It Exists
+
+Your starred repositories are not just bookmarks. They are a long-term signal of your technical taste: frameworks, tools, templates, MCP servers, agent projects, CLIs, automation scripts, and reference implementations you already cared enough to save.
+
+The problem is that this signal usually stays trapped inside GitHub. Your AI coding agents do not know it by default, and they do not automatically use it when choosing technology, finding reference implementations, or recommending tools.
+
+GitHub Stars Radar turns those stars into a local-first, queryable, reusable agent memory layer that multiple AI coding assistants can share.
+
+## Without It / With It
+
+| Without GitHub Stars Radar | With GitHub Stars Radar |
+| --- | --- |
+| Agents search from scratch every time | Agents first query projects you already starred and filtered |
+| GitHub Stars are just bookmarks | Stars become private technical memory |
+| Different AI assistants do not share context | Codex, Claude Code, OpenClaw, and Hermes can reuse the same local memory |
+| Recommendations are hard to audit | Ranked picks include `score_breakdown` and saved analysis |
+| Repositories get re-analyzed repeatedly | Agents can save summary, tags, category, and notes |
+
+## Good For
+
+- Technology choices grounded in projects you already trust.
+- Finding reference implementations from your long-term collection.
+- Sharing one local project memory across Codex, Claude Code, OpenClaw, and Hermes.
+- Reusing MCP servers, agent projects, CLI tools, and automation scripts.
+- Preserving repository analysis so future agents do not repeat the same work.
+
+## Ask Your Agent Like This
+
+```text
+Check my GitHub Stars first. I want to build a local-first MCP tool.
+Which starred projects should I reference? Explain fit, trade-offs, and score_breakdown.
+```
+
+That is where GitHub Stars Radar fits best: not manual bookmark browsing, but agent-triggered access to your private technical memory when context matters.
+
+## Why Not Just The GitHub API?
+
+The GitHub API can tell you which repositories you starred. It does not know:
+
+- Which repositories fit the current task.
+- Which README files have already been read by an agent.
+- Which projects were analyzed, categorized, or tagged before.
+- Why one repository is a better reference than another.
+- How multiple AI coding assistants should reuse the same local context.
+
+GitHub Stars Radar handles the second half: turning raw stars into queryable, reusable, explainable private technical memory for AI agents.
+
+## Quickstart
 
 Choose one installation route. You do not need to ask AI to install the project and then install it manually again.
 
@@ -64,17 +115,17 @@ Use this when you want direct control over config files, MCP paths, and environm
 
 The following sections show the manual install routes for Codex, Claude Code, OpenClaw, and Hermes.
 
-## Features
+## Core Capabilities
 
-| Feature | Meaning |
+| Capability | Value for AI coding agents |
 | --- | --- |
-| Sync GitHub stars | Pull your starred repositories into a local cache |
-| SQLite cache | Keep data on your computer |
-| Added/removed/updated detection | Track what changed since the last sync |
-| Save agent analysis | Store summaries, tags, categories, platforms, and notes |
-| TTL auto-sync | Refresh stale cache automatically and fall back to stale data if sync fails |
-| MCP tools | Expose a shared toolset to MCP-compatible clients |
-| Plugin packaging | Codex and Claude Code can install bundled MCP config and guidance |
+| Local stars cache | Agents query projects you already trust instead of searching randomly |
+| README snapshots | Recommendations can use real project descriptions, not just repo names and topics |
+| Tags, metadata, and change tracking | Agents can judge language, topic, activity, and collection changes |
+| Saved agent analysis | One agent's repository analysis can be reused by future agents |
+| Explainable recommendations | `score_breakdown` makes ranked picks easier to audit |
+| TTL auto-sync | Stale cache refreshes automatically; old cache remains usable if sync fails |
+| MCP / Plugin integration | Codex, Claude Code, and other MCP clients can call the same tools |
 
 ## MCP Vs Plugin
 
@@ -82,7 +133,7 @@ The MCP server provides the actual tools: `sync_stars`, `sync_readmes`, `search_
 
 Plugins are installation and guidance bundles. Codex and Claude Code can use plugin metadata and skills/instructions. OpenClaw and Hermes should use the generic stdio MCP configuration unless they have a verified plugin format for your environment.
 
-## Manual Setup
+## Setup Requirements
 
 Requirements:
 
@@ -113,6 +164,8 @@ Recommended flow:
 6. In the AI client, run `sync_stars` or `search_stars` to test it. If you want README cache coverage, run `sync_readmes` in batches.
 
 The installer installs the tool and generates config files. It does not silently modify every AI client configuration because client schemas and config locations vary.
+
+## Manual Setup: Clone And Initialize
 
 Clone and initialize:
 
